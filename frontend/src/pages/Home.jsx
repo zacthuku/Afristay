@@ -3,6 +3,7 @@ import Hero from "../components/Hero";
 import Footer from "../components/Footer";
 import ListingCard from "../components/ListingCard"; // default import
 import listings from "../data/listings";
+import { SearchBar } from "../components/SearchBar";
 
 // categories
 const categories = [
@@ -19,6 +20,7 @@ export default function Home() {
   return (
     <div className="bg-cream min-h-screen flex flex-col">
       <Hero />
+      <SearchBar />
 
       {/* Categories */}
       <section className="w-full py-12">
