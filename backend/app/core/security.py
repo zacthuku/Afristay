@@ -5,7 +5,8 @@ from passlib.context import CryptContext
 from app.core.config import settings
 from app.core.redis import is_token_blacklisted
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ✅ Switch to Argon2
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60

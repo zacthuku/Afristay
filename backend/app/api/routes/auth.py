@@ -14,16 +14,16 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.post("/register", response_model=TokenResponse)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
     _, token = register_user(db, data.email, data.password)
-    return {"access_token": token}
+    return {"access_token": token, "message": "Registration successful! Welcome to AfriStay."}
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     _, token = login_user(db, data.email, data.password)
-    return {"access_token": token}
+    return {"access_token": token, "message": "Login successful!"}
 
 
 @router.post("/google", response_model=TokenResponse)
 def google_login(data: GoogleAuthRequest, db: Session = Depends(get_db)):
     _, token = google_auth(db, data.id_token)
-    return {"access_token": token}
+    return {"access_token": token, "message": "Google login successful!"}

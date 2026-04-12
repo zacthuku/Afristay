@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useContext(AppContext);
@@ -32,6 +33,7 @@ export default function Login() {
 
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       const response = await authService.login(email, password);
@@ -42,8 +44,13 @@ export default function Login() {
       // Update user context
       setUser({ email });
 
-      // ✅ Redirect correctly
-      navigate(from, { replace: true });
+      // Show success message
+      setSuccess(response.message || "Login successful!");
+      
+      // Redirect after brief delay to show message
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 1500);
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
     } finally {
@@ -92,6 +99,13 @@ export default function Login() {
           </button>
 
           <div className="text-center text-sm text-gray-400 mb-4">or</div>
+
+          {/* SUCCESS MESSAGE */}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg mb-4">
+              {success}
+            </div>
+          )}
 
           {/* ERROR MESSAGE */}
           {error && (

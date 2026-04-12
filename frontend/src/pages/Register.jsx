@@ -15,6 +15,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useContext(AppContext);
@@ -37,9 +38,10 @@ export default function Register() {
 
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      const response = await authService.register(email, password);
+      const response = await authService.register(email, password, confirmPassword);
       
       // Store token
       localStorage.setItem("token", response.access_token);
@@ -47,8 +49,13 @@ export default function Register() {
       // Update user context
       setUser({ email });
       
-      // Redirect
-      navigate(from, { replace: true });
+      // Show success message
+      setSuccess(response.message || "Registration successful!");
+      
+      // Redirect after brief delay to show message
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 1500);
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {
@@ -93,6 +100,13 @@ export default function Register() {
           </button>
 
           <div className="text-center text-sm text-gray-400 mb-4">or</div>
+
+          {/* SUCCESS MESSAGE */}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg mb-4">
+              {success}
+            </div>
+          )}
 
           {/* ERROR MESSAGE */}
           {error && (
