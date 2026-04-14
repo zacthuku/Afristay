@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import listings from "../data/listings";
+import { toast } from "react-toastify";
+import { AppContext } from "../context/AppContext";
+
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const { listings } = useContext(AppContext);
 
-  const bgImage = listings[1].images[0];
+  const bgImage = listings[1]?.images?.[0] || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e";
 
   const handleReset = () => {
-    alert("Reset link sent to " + email);
+    toast.success("Password reset link sent to " + email + ". Please check your email.");
   };
 
   return (

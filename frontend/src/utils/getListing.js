@@ -1,5 +1,11 @@
-import listings from "../data/listings";
+import { listingService } from "../services/api";
 
-export function getListingById(id) {
-  return listings.find((item) => item.id === Number(id));
+export async function getListingById(id) {
+  try {
+    const listing = await listingService.getListingById(id);
+    return listing;
+  } catch (error) {
+    console.error("Failed to fetch listing:", error);
+    return null;
+  }
 }

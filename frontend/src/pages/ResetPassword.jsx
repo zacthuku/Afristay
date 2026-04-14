@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import listings from "../data/listings";
+import { toast } from "react-toastify";
+import { AppContext } from "../context/AppContext";
+
 import { Eye, EyeOff } from "lucide-react";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const { listings } = useContext(AppContext);
 
   // 🔥 Step control
   const [step, setStep] = useState(1);
@@ -22,24 +25,24 @@ export default function ResetPassword() {
   // 🔥 Mock code (simulate backend)
   const [generatedCode, setGeneratedCode] = useState("");
 
-  const bgImage = listings[1].images[0];
+  const bgImage = listings[1]?.images?.[0] || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e";
 
   // STEP 1 → Send Code
   const handleSendCode = () => {
-    if (!email) return alert("Enter your email");
+    if (!email) return toast.error("Please enter your email address.");
 
     // 🔥 simulate registered user check
     const isRegistered = true;
 
     if (!isRegistered) {
-      alert("Email not found");
+      toast.error("No account found with this email address.");
       return;
     }
 
     const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(mockCode);
 
-    alert(`Reset code sent to ${email} (Mock: ${mockCode})`);
+    toast.success("Verification code sent to " + email + ". (For demo: " + mockCode + ")");
 
     setStep(2);
   };
@@ -47,18 +50,18 @@ export default function ResetPassword() {
   // STEP 2 → Reset Password
   const handleReset = () => {
     if (!code || !password || !confirmPassword) {
-      return alert("Fill all fields");
+      return toast.error("Please fill in all required fields.");
     }
 
     if (code !== generatedCode) {
-      return alert("Invalid reset code");
+      return toast.error("The verification code is incorrect. Please try again.");
     }
 
     if (password !== confirmPassword) {
-      return alert("Passwords do not match");
+      return toast.error("The passwords do not match. Please try again.");
     }
 
-    alert("Password successfully reset!");
+    toast.success("Your password has been reset successfully. You can now log in with your new password.");
 
     navigate("/", { replace: true });
   };

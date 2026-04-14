@@ -79,7 +79,13 @@ export const authService = {
   googleAuth: (token) =>
     apiCall("/auth/google", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ id_token: token }),
+    }),
+
+  changePassword: (data) =>
+    apiCall("/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify(data),
     }),
 
   logout: () => {
@@ -90,6 +96,10 @@ export const authService = {
 // Users Service
 export const userService = {
   getCurrentUser: () => apiCall("/users/me"),
+  becomeHost: () =>
+    apiCall("/users/me/become-host", {
+      method: "POST",
+    }),
   
   updateProfile: (data) =>
     apiCall("/users/me", {
@@ -97,32 +107,64 @@ export const userService = {
       body: JSON.stringify(data),
     }),
 
+  deleteAccount: () =>
+    apiCall("/users/me", {
+      method: "DELETE",
+    }),
+
+  listUsers: () => apiCall("/users"),
+
+  deleteUser: (id) =>
+    apiCall(`/users/${id}`, {
+      method: "DELETE",
+    }),
+
+  blockUser: (id, isBlocked) =>
+    apiCall(`/users/${id}/block`, {
+      method: "PUT",
+      body: JSON.stringify({ is_blocked: isBlocked }),
+    }),
+
   getUserById: (id) => apiCall(`/users/${id}`),
+};
+
+export const hostService = {
+  getMyServices: () => apiCall("/services/host"),
+  createService: (data) =>
+    apiCall("/services", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateService: (id, data) =>
+    apiCall(`/services/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 // Listings Service
 export const listingService = {
   getAllListings: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiCall(`/listings${queryString ? "?" + queryString : ""}`);
+    return apiCall(`/services${queryString ? "?" + queryString : ""}`);
   },
 
-  getListingById: (id) => apiCall(`/listings/${id}`),
+  getListingById: (id) => apiCall(`/services/${id}`),
 
   createListing: (data) =>
-    apiCall("/listings", {
+    apiCall("/services", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   updateListing: (id, data) =>
-    apiCall(`/listings/${id}`, {
+    apiCall(`/services/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   deleteListing: (id) =>
-    apiCall(`/listings/${id}`, {
+    apiCall(`/services/${id}`, {
       method: "DELETE",
     }),
 };

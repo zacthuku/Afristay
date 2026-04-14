@@ -1,8 +1,8 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { authService } from "../services/api";
-import listings from "../data/listings";
+import { authService, userService } from "../services/api";
+
 
 // ✅ Icons
 import { Eye, EyeOff } from "lucide-react";
@@ -15,7 +15,7 @@ export default function Login() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setUser } = useContext(AppContext);
+  const { setUser, listings } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,7 +23,57 @@ export default function Login() {
   const from = location.state?.from?.pathname || "/";
 
   // ✅ Background image
-  const bgImage = listings[0].images[0];
+  const bgImage = listings[0]?.images?.[0] || "https://images.unsplash.com/photo-1501785888041-af3ef285b470";
+
+  const handleGoogleLogin = async (response) => {
+    try {
+      const res = await authService.googleAuth(response.credential);
+      localStorage.setItem("token", res.access_token);
+      const userData = await userService.getCurrentUser();
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+      setSuccess(res.message || "Google login successful!");
+
+      const defaultDestination =
+        userData.role === "admin"
+          ? "/admin/users"
+          : userData.role === "host"
+          ? "/host/dashboard"
+          : "/";
+      const redirectTo =
+        from && !["/login", "/register"].includes(from) ? from : defaultDestination;
+
+      setTimeout(() => {
+        navigate(redirectTo, { replace: true });
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Google login failed");
+    }
+  };
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    if (!window.google) return;
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
+    if (clientId === "YOUR_CLIENT_ID") {
+      console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
+      return;
+    }
+
+    if (!window.google._gsi_initialized) {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleLogin,
+      });
+      window.google._gsi_initialized = true;
+    }
+
+    const element = document.getElementById("google-signin");
+    if (element) {
+      window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
+    }
+  }, [handleGoogleLogin]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,19 +87,24 @@ export default function Login() {
 
     try {
       const response = await authService.login(email, password);
-      
-      // Store token
       localStorage.setItem("token", response.access_token);
-      
-      // Update user context
-      setUser({ email });
+      const userData = await userService.getCurrentUser();
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
 
-      // Show success message
       setSuccess(response.message || "Login successful!");
-      
-      // Redirect after brief delay to show message
+
+      const defaultDestination =
+        userData.role === "admin"
+          ? "/admin/users"
+          : userData.role === "host"
+          ? "/host/dashboard"
+          : "/";
+      const redirectTo =
+        from && !["/login", "/register"].includes(from) ? from : defaultDestination;
+
       setTimeout(() => {
-        navigate(from, { replace: true });
+        navigate(redirectTo, { replace: true });
       }, 1500);
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
@@ -89,14 +144,7 @@ export default function Login() {
           </h2>
 
           {/* GOOGLE */}
-          <button className="w-full flex items-center justify-center gap-3 border py-2 rounded-lg mb-4 hover:bg-gray-50">
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Continue with Google
-          </button>
+          <div id="google-signin" className="mb-4"></div>
 
           <div className="text-center text-sm text-gray-400 mb-4">or</div>
 

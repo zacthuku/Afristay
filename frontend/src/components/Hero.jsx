@@ -1,18 +1,22 @@
-import { useEffect, useState } from "react";
-import listings from "../data/listings";
+import { useEffect, useState, useContext } from "react";
+import { AppContext } from "../context/AppContext";
 import { SearchBar } from "../components/SearchBar";
 
-// Extract hero images (only first image of each listing)
-const heroImages = listings.map(listing => listing.images[0]).filter(Boolean);
-
 export default function Hero() {
+  const { listings } = useContext(AppContext);
   const [currentImage, setCurrentImage] = useState(0);
   const [loadedImages, setLoadedImages] = useState([]);
+  const [heroImages, setHeroImages] = useState([]);
 
-  // Preload images
+  // Extract hero images from listings and preload them
   useEffect(() => {
+    if (!listings || listings.length === 0) return;
+    
+    const images = listings.map(listing => listing.images?.[0]).filter(Boolean);
+    setHeroImages(images);
+    
     let isMounted = true;
-    heroImages.forEach((src) => {
+    images.forEach((src) => {
       const img = new Image();
       img.src = src;
       img.onload = () => {
@@ -22,7 +26,7 @@ export default function Hero() {
       img.onerror = () => console.warn(`Image failed to load: ${src}`);
     });
     return () => { isMounted = false; };
-  }, []);
+  }, [listings]);
 
   // Rotate images every 5s
   useEffect(() => {

@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     SECRET_KEY: str
+    GOOGLE_CLIENT_ID: str = "YOUR_CLIENT_ID"  # Set in .env file
 
     # Pydantic v2 config
     model_config = SettingsConfigDict(

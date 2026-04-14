@@ -22,6 +22,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     email: Mapped[str] = mapped_column(String, unique=True, nullable=True)
+    name: Mapped[str] = mapped_column(String, nullable=True)
     phone: Mapped[str] = mapped_column(String, unique=True, nullable=True)
 
     password_hash: Mapped[str] = mapped_column(String, nullable=True)
@@ -29,7 +30,9 @@ class User(Base):
     auth_provider: Mapped[str] = mapped_column(String, default="email")
 
     role: Mapped[str] = mapped_column(String, default="guest")
+    host_application_status: Mapped[str] = mapped_column(String, default="none")
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -61,12 +64,14 @@ class Service(Base):
     pricing_type: Mapped[str] = mapped_column(String)
 
     service_metadata: Mapped[dict] = mapped_column(JSONB)
+    approval_status: Mapped[str] = mapped_column(String, default="pending")
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         CheckConstraint("type IN ('accommodation','transport')"),
         CheckConstraint("pricing_type IN ('per_night','per_hour','fixed','per_km')"),
+        CheckConstraint("approval_status IN ('pending','approved','rejected')"),
     )
 
     # Relationships

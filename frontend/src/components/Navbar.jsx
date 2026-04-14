@@ -1,9 +1,34 @@
-import { useState } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
 import logo from "../assets/afristay svg.svg";
+
+function getInitials(user) {
+  if (!user) return "";
+  const name = user.name || user.email || "";
+  return name.charAt(0).toUpperCase();
+}
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const { user, logout } = useContext(AppContext);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const navLinks = [
     { name: "Explore", path: "/" },
@@ -37,24 +62,88 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* Desktop CTA Buttons */}
-      <div className="hidden md:flex items-center gap-2">
-        <Link
-          to="/login"
-          className="border border-[#3D2B1A] px-5 py-2 rounded-full text-[14px]"
-        >
-          Sign In
-        </Link>
+      {/* Auth Section */}
+      <div className="hidden md:flex items-center gap-3 relative">
+        {!user ? (
+          <>
+            <Link
+              to="/login"
+              className="border border-[#3D2B1A] px-5 py-2 rounded-full text-[14px]"
+            >
+              Sign In
+            </Link>
 
-        <Link
-          to="/register"
-          className="bg-[#C4622D] text-white px-5 py-2 rounded-full text-[14px]"
-        >
-          Get Started
-        </Link>
+            <Link
+              to="/register"
+              className="bg-[#C4622D] text-white px-5 py-2 rounded-full text-[14px]"
+            >
+              Get Started
+            </Link>
+          </>
+        ) : (
+          <>
+            {/* Avatar */}
+            <div
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-[#C4622D] text-white font-semibold cursor-pointer"
+            >
+              {getInitials(user)}
+            </div>
+
+            {/* Dropdown */}
+            {showDropdown && (
+              <div ref={dropdownRef} className="absolute right-0 top-12 w-56 bg-white shadow-lg rounded-xl border py-2 z-60">
+
+                <Link to="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                  <span>👤</span>
+                  Profile
+                </Link>
+
+                <Link to="/settings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                  <span>⚙️</span>
+                  Settings
+                </Link>
+
+                {user.role === "host" && (
+                  <Link to="/host/dashboard" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                    <span>🏠</span>
+                    Host Dashboard
+                  </Link>
+                )}
+
+                {user.role === "admin" && (
+                  <Link to="/admin/users" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                    <span>👑</span>
+                    Admin Panel
+                  </Link>
+                )}
+
+                {user.role === "user" && (
+                  <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                    <span>📊</span>
+                    My Dashboard
+                  </Link>
+                )}
+
+                <div className="border-t my-2"></div>
+
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowDropdown(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-500"
+                >
+                  <span>🚪</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Mobile Menu Toggle */}
+      {/* Mobile Toggle */}
       <div className="md:hidden">
         <button onClick={() => setIsOpen(!isOpen)}>
           <svg className="w-6 h-6 text-[#3D2B1A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,42 +156,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`md:hidden absolute top-[68px] left-0 w-full bg-[#FAF6EF] transition-all duration-300 ${
-        isOpen ? "max-h-[500px] py-4" : "max-h-0 overflow-hidden"
-      }`}>
-        <ul className="flex flex-col gap-2 px-4">
-          {navLinks.map((link) => (
-            <li key={link.name}>
-              <Link
-                to={link.path}
-                onClick={() => setIsOpen(false)}
-                className="block text-[14px] font-medium text-[#5C4230] hover:text-[#C4622D] px-3 py-2"
-              >
-                {link.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex flex-col gap-2 px-4 mt-4">
-          <Link
-            to="/login"
-            onClick={() => setIsOpen(false)}
-            className="border border-[#3D2B1A] py-2 rounded-full text-[14px] text-center"
-          >
-            Sign In
-          </Link>
-
-          <Link
-            to="/register"
-            onClick={() => setIsOpen(false)}
-            className="bg-[#C4622D] text-white py-2 rounded-full text-[14px] text-center"
-          >
-            Get Started
-          </Link>
-        </div>
-      </div>
     </nav>
   );
 }

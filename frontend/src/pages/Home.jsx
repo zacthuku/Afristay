@@ -1,9 +1,10 @@
+import { useContext } from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
 import ListingCard from "../components/ListingCard"; // default import
-import listings from "../data/listings";
 import { SearchBar } from "../components/SearchBar";
+import { AppContext } from "../context/AppContext";
 
 // categories
 const categories = [
@@ -14,8 +15,26 @@ const categories = [
 ];
 
 export default function Home() {
+  const { listings, loading, error } = useContext(AppContext);
+
   // Sort listings by rating descending (highest first)
   const sortedListings = [...listings].sort((a, b) => b.rating - a.rating);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-xl">Loading listings...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-xl text-red-600">Error loading listings: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-cream min-h-screen flex flex-col">

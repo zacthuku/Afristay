@@ -23,4 +23,7 @@ def get_current_user(
     if not user:
         raise HTTPException(404, "User not found")
 
+    if getattr(user, "is_blocked", False):
+        raise HTTPException(403, "This account has been blocked")
+
     return user

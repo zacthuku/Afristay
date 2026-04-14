@@ -1,13 +1,56 @@
-import { createContext, useState } from "react";
-import listingsData from "../data/listings";
+import { createContext, useState, useEffect } from "react";
+import { listingService, userService } from "../services/api";
 
 export const AppContext = createContext();
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
 
+  // ✅ LOAD USER FROM LOCAL STORAGE
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    if (!token) {
+      return;
+    }
+
+    const refreshUser = async () => {
+      try {
+        const freshUser = await userService.getCurrentUser();
+        localStorage.setItem("user", JSON.stringify(freshUser));
+        setUser(freshUser);
+      } catch (err) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+      }
+    };
+
+    refreshUser();
+  }, []);
+
+  // ✅ AUTH FUNCTIONS
+  const login = (userData, token) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
+
   // DATA DOMAINS
-  const [listings, setListings] = useState(listingsData);
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState({
     mode: "",
@@ -20,6 +63,25 @@ export function AppProvider({ children }) {
   const [bookings, setBookings] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  // Fetch listings on component mount
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setLoading(true);
+        const data = await listingService.getAllListings();
+        setListings(data);
+        setSearchResults(data);
+      } catch (err) {
+        setError(err.message);
+        console.error("Failed to fetch listings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, []);
+
   // SEARCH LOGIC (SMART)
   const handleSearch = ({ query, mode, type, experience }) => {
     setSearchQuery(query);
@@ -31,28 +93,15 @@ export function AppProvider({ children }) {
     const e = experience?.toLowerCase() || "";
 
     const results = listings.filter((item) => {
-      // Safely access modes and adventures
-      const itemModes = item.modes || [];
-      const itemAdventures = item.adventures || [];
-
-      // Match location, title, description, adventures, or modes
       const matchesQuery =
         !q ||
         item.location.toLowerCase().includes(q) ||
         item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        itemAdventures.some((adv) => adv.title.toLowerCase().includes(q)) ||
-        itemModes.some((mod) => mod.toLowerCase().includes(q));
+        item.description.toLowerCase().includes(q);
 
-      // Match type exactly
-      const matchesType = !t || (item.type && item.type.toLowerCase() === t);
-
-      // Match mode
-      const matchesMode = !m || itemModes.some((mod) => mod.toLowerCase() === m);
-
-      // Match experience in adventures
-      const matchesExperience =
-        !e || itemAdventures.some((adv) => adv.title.toLowerCase().includes(e));
+      const matchesType = !t || t === "accommodation";
+      const matchesMode = !m;
+      const matchesExperience = !e;
 
       return matchesQuery && matchesType && matchesMode && matchesExperience;
     });
@@ -75,7 +124,11 @@ export function AppProvider({ children }) {
       value={{
         user,
         setUser,
+        login,
+        logout,
         listings,
+        loading,
+        error,
         searchQuery,
         searchFilters,
         searchResults,

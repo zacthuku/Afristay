@@ -1,8 +1,8 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import { authService } from "../services/api";
-import listings from "../data/listings";
+import { authService, userService } from "../services/api";
+
 
 // 🔥 Icons
 import { Eye, EyeOff } from "lucide-react";
@@ -18,12 +18,51 @@ export default function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setUser } = useContext(AppContext);
+  const { setUser, listings } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/";
-  const bgImage = listings[2].images[0];
+  const bgImage = listings[2]?.images?.[0] || "https://images.unsplash.com/photo-1493809842364-78817add7ffb";
+
+  const handleGoogleLogin = async (response) => {
+    try {
+      const res = await authService.googleAuth(response.credential);
+      localStorage.setItem("token", res.access_token);
+      const userData = await userService.getCurrentUser();
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+      setSuccess(res.message || "Google login successful!");
+      setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Google login failed");
+    }
+  };
+
+  useEffect(() => {
+    if (!window.google) return;
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
+    if (clientId === "YOUR_CLIENT_ID") {
+      console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
+      return;
+    }
+
+    if (!window.google._gsi_initialized) {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleLogin,
+      });
+      window.google._gsi_initialized = true;
+    }
+
+    const element = document.getElementById("google-signin-register");
+    if (element) {
+      window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
+    }
+  }, [handleGoogleLogin]);
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -42,19 +81,22 @@ export default function Register() {
 
     try {
       const response = await authService.register(email, password, confirmPassword);
-      
-      // Store token
+
       localStorage.setItem("token", response.access_token);
-      
-      // Update user context
-      setUser({ email });
-      
-      // Show success message
+      const userData = await userService.getCurrentUser();
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+
       setSuccess(response.message || "Registration successful!");
-      
-      // Redirect after brief delay to show message
+
+      const defaultDestination =
+        userData.role === "admin"
+          ? "/admin/users"
+          : userData.role === "host"
+          ? "/host/dashboard"
+          : "/";
       setTimeout(() => {
-        navigate(from, { replace: true });
+        navigate(defaultDestination, { replace: true });
       }, 1500);
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
@@ -90,14 +132,7 @@ export default function Register() {
           </h2>
 
           {/* GOOGLE BUTTON */}
-          <button className="w-full flex items-center justify-center gap-3 border py-2 rounded-lg mb-4 hover:bg-gray-50">
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Continue with Google
-          </button>
+          <div id="google-signin-register" className="mb-4"></div>
 
           <div className="text-center text-sm text-gray-400 mb-4">or</div>
 
