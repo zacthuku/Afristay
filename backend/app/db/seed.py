@@ -14,6 +14,19 @@ def seed_data(db: Session):
         return
 
     # =====================
+    # ADMIN USER
+    # =====================
+    admin = User(
+        email="admin@afristay.co.ke",
+        password_hash=hash_password("Afistay@1"),
+        role="admin",
+        is_verified=True
+    )
+
+    db.add(admin)
+    db.commit()
+
+    # =====================
     # USERS (HOSTS)
     # =====================
     host1 = User(

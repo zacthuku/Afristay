@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
@@ -6,12 +7,11 @@ import ListingCard from "../components/ListingCard"; // default import
 import { SearchBar } from "../components/SearchBar";
 import { AppContext } from "../context/AppContext";
 
-// categories
 const categories = [
-  { name: "Safari", icon: "🦁" },
-  { name: "Beach", icon: "🏖️" },
-  { name: "City", icon: "🏙️" },
-  { name: "Countryside", icon: "🌄" },
+  { name: "Safari", icon: "🦁", slug: "safari" },
+  { name: "Beach", icon: "🏖️", slug: "beach" },
+  { name: "City Stays", icon: "🏙️", slug: "city" },
+  { name: "Weekend Getaways", icon: "🌄", slug: "weekend" },
 ];
 
 export default function Home() {
@@ -47,13 +47,14 @@ export default function Home() {
           <h2 className="text-2xl font-semibold mb-6">Explore by category</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {categories.map((cat, index) => (
-              <div
+              <Link
                 key={index}
-                className="border rounded-xl p-6 text-center hover:shadow-md bg-white cursor-pointer"
+                to={`/search?category=${cat.slug}`}
+                className="border rounded-xl p-6 text-center hover:shadow-md bg-white cursor-pointer transition-shadow block"
               >
                 <div className="text-3xl mb-2">{cat.icon}</div>
-                <p className="font-medium">{cat.name}</p>
-              </div>
+                <p className="font-medium text-[#3D2B1A]">{cat.name}</p>
+              </Link>
             ))}
           </div>
         </div>

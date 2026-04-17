@@ -3,17 +3,15 @@ import { AppContext } from "../context/AppContext";
 import { SearchBar } from "../components/SearchBar";
 
 export default function Hero() {
-  const { listings } = useContext(AppContext);
+  const { listings, user } = useContext(AppContext);
   const [currentImage, setCurrentImage] = useState(0);
   const [loadedImages, setLoadedImages] = useState([]);
-  const [heroImages, setHeroImages] = useState([]);
 
   // Extract hero images from listings and preload them
   useEffect(() => {
     if (!listings || listings.length === 0) return;
     
     const images = listings.map(listing => listing.images?.[0]).filter(Boolean);
-    setHeroImages(images);
     
     let isMounted = true;
     images.forEach((src) => {
@@ -76,9 +74,11 @@ export default function Hero() {
           <button className="bg-[#C4622D] text-white px-6 py-3 rounded-full">
             Explore stays
           </button>
-          <button className="bg-white/20 backdrop-blur text-white px-6 py-3 rounded-full border border-white/30">
-            Become a host
-          </button>
+          {user?.role !== "admin" && (
+            <button className="bg-white/20 backdrop-blur text-white px-6 py-3 rounded-full border border-white/30">
+              Become a host
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap gap-10 text-white mb-12">
           <div>

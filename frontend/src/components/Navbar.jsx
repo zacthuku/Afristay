@@ -32,10 +32,10 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Explore", path: "/" },
-    { name: "Safari Lodges", path: "/safari" },
-    { name: "Beach Escapes", path: "/beach" },
-    { name: "Experiences", path: "/experiences" },
-    { name: "Become a Host", path: "/host" },
+    { name: "Safari Lodges", path: "/search?category=safari" },
+    { name: "Beach Escapes", path: "/search?category=beach" },
+    { name: "City Stays", path: "/search?category=city" },
+    ...(user?.role !== "admin" ? [{ name: "Become a Host", path: "/host" }] : []),
   ];
 
   return (
@@ -99,6 +99,11 @@ export default function Navbar() {
                   Profile
                 </Link>
 
+                <Link to="/bookings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                  <span>🗓️</span>
+                  My Bookings
+                </Link>
+
                 <Link to="/settings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
                   <span>⚙️</span>
                   Settings
@@ -112,10 +117,25 @@ export default function Navbar() {
                 )}
 
                 {user.role === "admin" && (
-                  <Link to="/admin/users" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
-                    <span>👑</span>
-                    Admin Panel
-                  </Link>
+                  <>
+                    <div className="px-4 py-1 text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Admin</div>
+                    <Link to="/admin" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                      <span>📊</span>
+                      Dashboard
+                    </Link>
+                    <Link to="/admin/users" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                      <span>👥</span>
+                      Manage Users
+                    </Link>
+                    <Link to="/admin/approvals" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                      <span>✅</span>
+                      Approvals
+                    </Link>
+                    <Link to="/admin/careers" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100" onClick={() => setShowDropdown(false)}>
+                      <span>💼</span>
+                      Manage Careers
+                    </Link>
+                  </>
                 )}
 
                 {user.role === "user" && (

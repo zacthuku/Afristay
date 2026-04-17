@@ -31,8 +31,13 @@ class User(Base):
 
     role: Mapped[str] = mapped_column(String, default="guest")
     host_application_status: Mapped[str] = mapped_column(String, default="none")
+    host_application_data: Mapped[dict] = mapped_column(JSONB, nullable=True)
+    host_rejection_reason: Mapped[str] = mapped_column(String, nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    password_reset_token: Mapped[str] = mapped_column(String, nullable=True)
+    password_reset_expires: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -315,3 +320,20 @@ class Review(Base):
 
     user = relationship("User", back_populates="reviews")
     service = relationship("Service", back_populates="reviews")
+
+
+# =========================
+# JOB OPENINGS
+# =========================
+class JobOpening(Base):
+    __tablename__ = "job_openings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    team: Mapped[str] = mapped_column(String, nullable=False)
+    location: Mapped[str] = mapped_column(String, nullable=False)
+    employment_type: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    requirements: Mapped[str] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

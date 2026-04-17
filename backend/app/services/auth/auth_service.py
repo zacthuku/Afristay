@@ -1,3 +1,6 @@
+import secrets
+from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
@@ -28,22 +31,38 @@ def change_password(db: Session, user_id: int, current_password: str, new_passwo
     return {"message": "Password changed successfully"}
 
 
-def forgot_password(db: Session, email: str):
+def forgot_password(db: Session, email: str, origin: str = ""):
+    from app.core.config import settings
     user = db.query(User).filter(User.email == email).first()
+    # Always return success to prevent email enumeration
     if not user:
-        raise HTTPException(404, "User not found")
-    # TODO: Send email with reset token
-    return {"message": "Password reset email sent"}
+        return {"message": "If that email is registered, a reset link has been sent."}
 
-
-def reset_password(db: Session, email: str, new_password: str):
-    validate_password(new_password)
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(404, "User not found")
-    user.password_hash = hash_password(new_password)
+    token = secrets.token_urlsafe(32)
+    user.password_reset_token = token
+    user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
     db.commit()
-    return {"message": "Password reset successfully"}
+
+    frontend_url = origin.rstrip("/") if origin else settings.FRONTEND_URL.rstrip("/")
+    EmailService.send_password_reset_email(email, token, frontend_url)
+    return {"message": "If that email is registered, a reset link has been sent."}
+
+
+def reset_password(db: Session, token: str, new_password: str):
+    validate_password(new_password)
+
+    user = db.query(User).filter(User.password_reset_token == token).first()
+    if not user:
+        raise HTTPException(400, "Invalid or expired reset token.")
+
+    if not user.password_reset_expires or datetime.utcnow() > user.password_reset_expires:
+        raise HTTPException(400, "Reset token has expired. Please request a new one.")
+
+    user.password_hash = hash_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    db.commit()
+    return {"message": "Password reset successfully. You can now log in."}
 
 
 def register_user(db: Session, email: str, password: str):

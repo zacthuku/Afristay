@@ -9,6 +9,7 @@ from app.models.all_models import (
     Trip,
     TripSegment,
     Payment,
+    JobOpening,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "Trip",
     "TripSegment",
     "Payment",
+    "JobOpening",
 ]

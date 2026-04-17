@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from geoalchemy2.elements import WKTElement
 
@@ -7,6 +9,10 @@ from app.db.session import get_db
 from app.models.all_models import Service, User
 from app.schemas.service import ServiceCreate, ServiceUpdate
 from app.services.email_service import EmailService
+
+
+class RejectBody(BaseModel):
+    reason: Optional[str] = ""
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
@@ -158,6 +164,37 @@ def approve_service(
         )
 
     return {"message": "Service approved", "service": serialize_service(service)}
+
+
+@router.put("/{service_id}/reject")
+def reject_service(
+    service_id: str,
+    body: RejectBody = None,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != "admin":
+        raise HTTPException(403, "Admin privileges required")
+
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(404, "Service not found")
+
+    service.approval_status = "rejected"
+    db.commit()
+    db.refresh(service)
+
+    host = db.query(User).filter(User.id == service.host_id).first()
+    reason = (body.reason if body else "") or ""
+    if host:
+        EmailService.send_service_rejection_email(
+            host.name or host.email.split("@")[0],
+            host.email,
+            service.title,
+            reason,
+        )
+
+    return {"message": "Service rejected", "service": serialize_service(service)}
 
 
 @router.get("/{service_id}")

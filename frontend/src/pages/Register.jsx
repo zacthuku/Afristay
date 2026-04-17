@@ -1,5 +1,5 @@
-import { useState, useContext, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useContext, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { authService, userService } from "../services/api";
 
@@ -14,18 +14,17 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { setUser, listings } = useContext(AppContext);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || "/";
   const bgImage = listings[2]?.images?.[0] || "https://images.unsplash.com/photo-1493809842364-78817add7ffb";
 
-  const handleGoogleLogin = async (response) => {
+  const handleGoogleLogin = useCallback(async (response) => {
     try {
       const res = await authService.googleAuth(response.credential);
       localStorage.setItem("token", res.access_token);
@@ -39,39 +38,51 @@ export default function Register() {
     } catch (err) {
       setError(err.response?.data?.detail || "Google login failed");
     }
-  };
+  }, [navigate, setUser]);
 
   useEffect(() => {
-    if (!window.google) return;
+    const initializeGoogleSignIn = () => {
+      if (!window.google) {
+        console.warn("⚠️ Google Sign-In library not loaded, retrying...");
+        setTimeout(initializeGoogleSignIn, 100);
+        return;
+      }
 
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
-    if (clientId === "YOUR_CLIENT_ID") {
-      console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
-      return;
-    }
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
+      if (clientId === "YOUR_CLIENT_ID") {
+        console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
+        return;
+      }
 
-    if (!window.google._gsi_initialized) {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleLogin,
-      });
-      window.google._gsi_initialized = true;
-    }
+      try {
+        if (!window.google._gsi_initialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleLogin,
+          });
+          window.google._gsi_initialized = true;
+        }
 
-    const element = document.getElementById("google-signin-register");
-    if (element) {
-      window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
-    }
+        const element = document.getElementById("google-signin-register");
+        if (element) {
+          window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
+        }
+      } catch (error) {
+        console.error("❌ Google Sign-In initialization failed:", error);
+      }
+    };
+
+    initializeGoogleSignIn();
   }, [handleGoogleLogin]);
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      setError("Please fill all fields");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const newErrors = {};
+    if (!email.trim()) newErrors.email = true;
+    if (!password) newErrors.password = true;
+    if (!confirmPassword) newErrors.confirmPassword = true;
+    if (password && confirmPassword && password !== confirmPassword) newErrors.passwordMismatch = true;
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -129,7 +140,7 @@ export default function Register() {
 
           <h2 className="text-2xl font-semibold mb-6 text-[#3D2B1A]">
             Create Account
-          </h2>
+          </h2> 
 
           {/* GOOGLE BUTTON */}
           <div id="google-signin-register" className="mb-4"></div>
@@ -151,55 +162,63 @@ export default function Register() {
           )}
 
           {/* EMAIL */}
-          <input
-            type="email"
-            placeholder="Enter your email"
-            className="w-full border p-3 mb-3 rounded-lg focus:ring-2 focus:ring-[#C4622D]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-
-          {/* PASSWORD */}
-          <div className="relative mb-3">
+          <div className="mb-3">
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              placeholder="Enter your email"
+              className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D] ${errors.email ? "border-red-400 bg-red-50" : ""}`}
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: false })); }}
               disabled={loading}
             />
+            {errors.email && <p className="text-red-500 text-xs mt-1">Email is required.</p>}
+          </div>
 
-            <button
-              type="button"
-              className="absolute right-3 top-3 text-gray-500"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={loading}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          {/* PASSWORD */}
+          <div className="mb-3">
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a password"
+                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D] ${errors.password ? "border-red-400 bg-red-50" : ""}`}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: false, passwordMismatch: false })); }}
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-500"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password && <p className="text-red-500 text-xs mt-1">Password is required.</p>}
           </div>
 
           {/* CONFIRM PASSWORD */}
-          <div className="relative mb-4">
-            <input
-              type={showConfirm ? "text" : "password"}
-              placeholder="Confirm password"
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D]"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-            />
-
-            <button
-              type="button"
-              className="absolute right-3 top-3 text-gray-500"
-              onClick={() => setShowConfirm(!showConfirm)}
-              disabled={loading}
-            >
-              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                placeholder="Confirm password"
+                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D] ${errors.confirmPassword || errors.passwordMismatch ? "border-red-400 bg-red-50" : ""}`}
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: false, passwordMismatch: false })); }}
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-500"
+                onClick={() => setShowConfirm(!showConfirm)}
+                disabled={loading}
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">Please confirm your password.</p>}
+            {errors.passwordMismatch && <p className="text-red-500 text-xs mt-1">Passwords do not match.</p>}
           </div>
 
           {/* SUBMIT */}

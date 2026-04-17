@@ -5,7 +5,7 @@ import { AppContext } from "../context/AppContext";
 import { userService, authService } from "../services/api";
 
 export default function Profile() {
-  const { user, setUser, logout } = useContext(AppContext);
+  const { user, setUser } = useContext(AppContext);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -61,7 +61,13 @@ export default function Profile() {
         phone: updatedUser.phone || "",
       }));
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Failed to update profile. Please check your information and try again.");
+      // Handle 401 errors (already handled by apiCall, but catch any other errors)
+      if (error.status === 401) {
+        toast.error("Your session has expired. Please log in again.");
+        navigate("/login", { replace: true });
+      } else {
+        toast.error(error.message || "Failed to update profile. Please check your information and try again.");
+      }
     }
   }
 
@@ -126,7 +132,7 @@ export default function Profile() {
           />
         </div>
 
-        <button className="bg-[#C4622D] text-white px-6 py-2 rounded-full">
+        <button className="bg-[#C4622D] text-white px-6 py-2 rounded-full transition duration-300 hover:bg-[#B85525] hover:shadow-lg hover:scale-105">
           Update Profile
         </button>
 

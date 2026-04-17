@@ -1,10 +1,11 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 import { listingService, userService } from "../services/api";
 
-export const AppContext = createContext();
+export const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // ✅ LOAD USER FROM LOCAL STORAGE
   useEffect(() => {
@@ -16,6 +17,7 @@ export function AppProvider({ children }) {
     }
 
     if (!token) {
+      setIsInitializing(false);
       return;
     }
 
@@ -25,9 +27,16 @@ export function AppProvider({ children }) {
         localStorage.setItem("user", JSON.stringify(freshUser));
         setUser(freshUser);
       } catch (err) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setUser(null);
+        console.error("Failed to refresh user:", err);
+        // Only clear if it's a 401 error
+        if (err.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setUser(null);
+        }
+        // Keep the stored user if it's a different error (network, etc)
+      } finally {
+        setIsInitializing(false);
       }
     };
 
@@ -35,17 +44,17 @@ export function AppProvider({ children }) {
   }, []);
 
   // ✅ AUTH FUNCTIONS
-  const login = (userData, token) => {
+  const login = useCallback((userData, token) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-  };
+  }, []);
 
   // DATA DOMAINS
   const [listings, setListings] = useState([]);
@@ -82,48 +91,59 @@ export function AppProvider({ children }) {
     fetchListings();
   }, []);
 
+  // Category keyword map for discovery filtering
+  const CATEGORY_KEYWORDS = {
+    safari: ["safari", "lodge", "mara", "wildlife", "amboseli", "tsavo", "game", "savanna"],
+    beach: ["beach", "coastal", "ocean", "diani", "mombasa", "watamu", "malindi", "sea", "shore"],
+    city: ["nairobi", "city", "apartment", "urban", "westlands", "kilimani", "cbd"],
+    weekend: ["getaway", "countryside", "retreat", "nanyuki", "naivasha", "limuru", "machakos", "sagana", "mountain"],
+  };
+
   // SEARCH LOGIC (SMART)
-  const handleSearch = ({ query, mode, type, experience }) => {
+  const handleSearch = useCallback(({ query = "", mode = "", type = "", experience = "", category = "" } = {}) => {
     setSearchQuery(query);
     setSearchFilters({ mode, type, experience });
 
-    const q = query?.toLowerCase() || "";
-    const m = mode?.toLowerCase() || "";
-    const t = type?.toLowerCase() || "";
-    const e = experience?.toLowerCase() || "";
+    const q = query.toLowerCase();
+    const cat = category.toLowerCase();
 
     const results = listings.filter((item) => {
-      const matchesQuery =
-        !q ||
-        item.location.toLowerCase().includes(q) ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q);
+      const text = [
+        item.title || "",
+        item.description || "",
+        item.location || "",
+        ...(item.amenities || []),
+      ].join(" ").toLowerCase();
 
-      const matchesType = !t || t === "accommodation";
-      const matchesMode = !m;
-      const matchesExperience = !e;
+      const matchesQuery = !q || text.includes(q);
 
-      return matchesQuery && matchesType && matchesMode && matchesExperience;
+      const matchesCategory = !cat || (() => {
+        const keywords = CATEGORY_KEYWORDS[cat] || [cat];
+        return keywords.some((kw) => text.includes(kw));
+      })();
+
+      return matchesQuery && matchesCategory;
     });
 
     setSearchResults(results);
-  };
+  }, [listings]);
 
   // BOOKING LOGIC
-  const createBooking = (item, dates) => {
+  const createBooking = useCallback((item, dates) => {
     const newBooking = {
       id: Date.now(),
       item,
       dates,
     };
     setBookings((prev) => [...prev, newBooking]);
-  };
+  }, []);
 
   return (
     <AppContext.Provider
       value={{
         user,
         setUser,
+        isInitializing,
         login,
         logout,
         listings,

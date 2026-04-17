@@ -42,9 +42,9 @@ def change_user_password(
 
 @router.post("/forgot-password")
 def forgot_user_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    return forgot_password(db, data.email)
+    return forgot_password(db, data.email, data.origin)
 
 
 @router.post("/reset-password")
 def reset_user_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
-    return reset_password(db, data.email, data.new_password)
+    return reset_password(db, data.token, data.new_password)

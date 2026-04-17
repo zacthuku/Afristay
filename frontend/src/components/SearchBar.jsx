@@ -11,7 +11,6 @@ export function SearchBar() {
   const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
   const [mode, setMode] = useState("");
   const [type, setType] = useState("");
   const [experience, setExperience] = useState("");
@@ -31,14 +30,11 @@ export function SearchBar() {
   }, []);
 
   // Suggestion logic
-  useEffect(() => {
-    if (!query) {
-      setSuggestions([]);
-      return;
-    }
-    const mockSuggestions = ["Nairobi", "Mombasa", "Diani Beach", "Maasai Mara", "Kisumu"];
-    setSuggestions(mockSuggestions.filter(item => item.toLowerCase().includes(query.toLowerCase())));
-  }, [query]);
+  const suggestions = query
+    ? ["Nairobi", "Mombasa", "Diani Beach", "Maasai Mara", "Kisumu"].filter((item) =>
+        item.toLowerCase().includes(query.toLowerCase())
+      )
+    : [];
 
   const onSearch = () => {
     handleSearch({ query, mode, type, experience });

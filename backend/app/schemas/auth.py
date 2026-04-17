@@ -86,6 +86,7 @@ class ChangePasswordRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+    origin: str = ""
 
 
 class ResetPasswordRequest(BaseModel):

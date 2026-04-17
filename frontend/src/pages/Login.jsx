@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { authService, userService } from "../services/api";
@@ -11,6 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function Login() {
   // ✅ Background image
   const bgImage = listings[0]?.images?.[0] || "https://images.unsplash.com/photo-1501785888041-af3ef285b470";
 
-  const handleGoogleLogin = async (response) => {
+  const handleGoogleLogin = useCallback(async (response) => {
     try {
       const res = await authService.googleAuth(response.credential);
       localStorage.setItem("token", res.access_token);
@@ -49,35 +50,50 @@ export default function Login() {
     } catch (err) {
       setError(err.response?.data?.detail || "Google login failed");
     }
-  };
+  }, [navigate, setUser, from]);
 
   // Initialize Google Sign-In
   useEffect(() => {
-    if (!window.google) return;
+    const initializeGoogleSignIn = () => {
+      if (!window.google) {
+        console.warn("⚠️ Google Sign-In library not loaded, retrying...");
+        setTimeout(initializeGoogleSignIn, 100);
+        return;
+      }
 
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
-    if (clientId === "YOUR_CLIENT_ID") {
-      console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
-      return;
-    }
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
+      if (clientId === "YOUR_CLIENT_ID") {
+        console.warn("⚠️ Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local");
+        return;
+      }
 
-    if (!window.google._gsi_initialized) {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleLogin,
-      });
-      window.google._gsi_initialized = true;
-    }
+      try {
+        if (!window.google._gsi_initialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleLogin,
+          });
+          window.google._gsi_initialized = true;
+        }
 
-    const element = document.getElementById("google-signin");
-    if (element) {
-      window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
-    }
+        const element = document.getElementById("google-signin");
+        if (element) {
+          window.google.accounts.id.renderButton(element, { theme: "outline", size: "large" });
+        }
+      } catch (error) {
+        console.error("❌ Google Sign-In initialization failed:", error);
+      }
+    };
+
+    initializeGoogleSignIn();
   }, [handleGoogleLogin]);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill all fields");
+    const newErrors = {};
+    if (!email.trim()) newErrors.email = true;
+    if (!password) newErrors.password = true;
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -163,23 +179,26 @@ export default function Login() {
           )}
 
           {/* EMAIL */}
-          <input
-            type="email"
-            placeholder="Enter your email"
-            className="w-full border p-3 mb-3 rounded-lg focus:ring-2 focus:ring-[#C4622D]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
+          <div className="mb-3">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D] ${errors.email ? "border-red-400 bg-red-50" : ""}`}
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: false })); }}
+              disabled={loading}
+            />
+            {errors.email && <p className="text-red-500 text-xs mt-1">Email is required.</p>}
+          </div>
 
           {/* PASSWORD */}
           <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D]"
+              className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-[#C4622D] ${errors.password ? "border-red-400 bg-red-50" : ""}`}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: false })); }}
               disabled={loading}
             />
 
@@ -192,6 +211,8 @@ export default function Login() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+
+          {errors.password && <p className="text-red-500 text-xs mt-1 mb-1">Password is required.</p>}
 
           {/* FORGOT */}
           <div className="text-right mb-4">

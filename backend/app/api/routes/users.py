@@ -1,11 +1,32 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
-from app.models import User
+from app.models import User, Service, Booking
 from app.schemas.user import UserUpdate, UserBlockRequest
 from app.services.email_service import EmailService
+
+
+class RejectBody(BaseModel):
+    reason: Optional[str] = ""
+
+
+class HostApplicationBody(BaseModel):
+    company_name: str
+    business_type: str
+    business_description: str
+    business_email: Optional[str] = None
+    phone: Optional[str] = None
+    location: str
+    services_offered: str
+    operating_areas: Optional[str] = None
+    pricing_range: Optional[str] = None
+    doc_links: Optional[str] = None
+    social_links: Optional[str] = None
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -25,12 +46,17 @@ def get_me(user=Depends(get_current_user)):
         "phone": getattr(user, "phone", None),
         "role": user.role,
         "host_application_status": getattr(user, "host_application_status", "none"),
+        "host_rejection_reason": getattr(user, "host_rejection_reason", None),
         "is_blocked": getattr(user, "is_blocked", False),
     }
 
 
 @router.post("/me/become-host")
-def become_host(user=Depends(get_current_user), db: Session = Depends(get_db)):
+def become_host(
+    body: HostApplicationBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if user.role == "host":
         return {"message": "You are already a host", "host_application_status": "approved"}
 
@@ -38,6 +64,10 @@ def become_host(user=Depends(get_current_user), db: Session = Depends(get_db)):
         return {"message": "Host application already pending", "host_application_status": "pending"}
 
     user.host_application_status = "pending"
+    user.host_application_data = body.model_dump()
+    user.host_rejection_reason = None
+    if body.phone:
+        user.phone = body.phone
     db.commit()
     db.refresh(user)
 
@@ -90,9 +120,13 @@ def list_users(current_user=Depends(get_current_user), db: Session = Depends(get
             "id": str(item.id),
             "email": item.email,
             "name": item.name,
+            "phone": getattr(item, "phone", None),
             "role": item.role,
             "host_application_status": getattr(item, "host_application_status", "none"),
+            "host_application_data": getattr(item, "host_application_data", None),
+            "host_rejection_reason": getattr(item, "host_rejection_reason", None),
             "is_blocked": getattr(item, "is_blocked", False),
+            "created_at": item.created_at.isoformat() if item.created_at else None,
         }
         for item in users
     ]
@@ -141,6 +175,43 @@ def approve_host_user(
     }
 
 
+@router.put("/{user_id}/reject-host")
+def reject_host_user(
+    user_id: str,
+    body: RejectBody = None,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    user.host_application_status = "rejected"
+    reason = (body.reason if body else "") or ""
+    user.host_rejection_reason = reason
+    db.commit()
+    db.refresh(user)
+
+    EmailService.send_host_rejection_email(
+        user.name or user.email.split("@")[0],
+        user.email,
+        reason,
+    )
+
+    return {
+        "message": "Host application rejected",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "host_application_status": user.host_application_status,
+            "is_blocked": getattr(user, "is_blocked", False),
+        },
+    }
+
+
 @router.put("/{user_id}/block")
 def block_user(
     user_id: str,
@@ -165,4 +236,70 @@ def block_user(
             "role": user.role,
             "is_blocked": user.is_blocked,
         },
+    }
+
+@router.get("/admin/stats")
+def admin_stats(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_admin(current_user)
+
+    total_users = db.query(User).count()
+    total_hosts = db.query(User).filter(User.role == "host").count()
+    total_guests = db.query(User).filter(User.role == "client").count()
+    pending_hosts = db.query(User).filter(User.host_application_status == "pending").count()
+
+    total_services = db.query(Service).count()
+    approved_services = db.query(Service).filter(Service.approval_status == "approved").count()
+    pending_services = db.query(Service).filter(Service.approval_status == "pending").count()
+
+    total_bookings = db.query(Booking).count()
+    confirmed_bookings = db.query(Booking).filter(Booking.status == "confirmed").count()
+    cancelled_bookings = db.query(Booking).filter(Booking.status == "cancelled").count()
+    total_revenue = db.query(func.sum(Booking.total_price)).filter(Booking.status == "confirmed").scalar() or 0
+
+    recent_users = db.query(User).order_by(User.created_at.desc()).limit(8).all()
+    recent_bookings = (
+        db.query(Booking)
+        .order_by(Booking.created_at.desc())
+        .limit(8)
+        .all()
+    )
+
+    return {
+        "users": {
+            "total": total_users,
+            "hosts": total_hosts,
+            "guests": total_guests,
+            "pending_hosts": pending_hosts,
+        },
+        "services": {
+            "total": total_services,
+            "approved": approved_services,
+            "pending": pending_services,
+        },
+        "bookings": {
+            "total": total_bookings,
+            "confirmed": confirmed_bookings,
+            "cancelled": cancelled_bookings,
+        },
+        "revenue": float(total_revenue),
+        "recent_users": [
+            {
+                "id": str(u.id),
+                "name": u.name,
+                "email": u.email,
+                "role": u.role,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+            }
+            for u in recent_users
+        ],
+        "recent_bookings": [
+            {
+                "id": str(b.id),
+                "service_title": b.service.title if b.service else "—",
+                "total_price": float(b.total_price),
+                "status": b.status,
+                "created_at": b.created_at.isoformat() if b.created_at else None,
+            }
+            for b in recent_bookings
+        ],
     }

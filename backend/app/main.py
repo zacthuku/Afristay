@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
-from app.api.routes import auth, users, services
+from app.api.routes import auth, users, services, bookings, payments, reviews, jobs
 
 
 class CrossOriginOpenerPolicyMiddleware(BaseHTTPMiddleware):
@@ -35,7 +35,12 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(users.router)  
-app.include_router(services.router)  
+app.include_router(services.router)
+app.include_router(bookings.router)
+app.include_router(payments.router)
+app.include_router(reviews.router)
+app.include_router(jobs.router)
+
 @app.get("/")
 async def root():
     return {"message": "Afristay backend running"}

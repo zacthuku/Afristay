@@ -11,7 +11,7 @@ const getHeaders = () => {
 };
 
 // Extract error message from various response formats
-const extractErrorMessage = (data, status) => {
+const extractErrorMessage = (data) => {
   // Simple error message
   if (data.message) return data.message;
   if (data.detail && typeof data.detail === "string") return data.detail;
@@ -48,6 +48,16 @@ const apiCall = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
+      // Handle 401 Unauthorized - clear auth and redirect
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        // Redirect to login if not already there
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+
       const errorMessage = extractErrorMessage(data, response.status);
       const error = new Error(errorMessage);
       error.status = response.status;
@@ -88,6 +98,18 @@ export const authService = {
       body: JSON.stringify(data),
     }),
 
+  forgotPassword: (email) =>
+    apiCall("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email, origin: window.location.origin }),
+    }),
+
+  resetPassword: (token, newPassword) =>
+    apiCall("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
+    }),
+
   logout: () => {
     localStorage.removeItem("token");
   },
@@ -96,9 +118,10 @@ export const authService = {
 // Users Service
 export const userService = {
   getCurrentUser: () => apiCall("/users/me"),
-  becomeHost: () =>
+  becomeHost: (data) =>
     apiCall("/users/me/become-host", {
       method: "POST",
+      body: JSON.stringify(data),
     }),
   
   updateProfile: (data) =>
@@ -126,6 +149,14 @@ export const userService = {
     }),
 
   getUserById: (id) => apiCall(`/users/${id}`),
+
+  approveHost: (id) =>
+    apiCall(`/users/${id}/approve-host`, { method: "PUT" }),
+  rejectHost: (id, reason = "") =>
+    apiCall(`/users/${id}/reject-host`, {
+      method: "PUT",
+      body: JSON.stringify({ reason }),
+    }),
 };
 
 export const hostService = {
@@ -140,6 +171,15 @@ export const hostService = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  getPendingServices: () => apiCall("/services/pending"),
+  approveService: (id) =>
+    apiCall(`/services/${id}/approve`, { method: "PUT" }),
+  rejectService: (id, reason = "") =>
+    apiCall(`/services/${id}/reject`, {
+      method: "PUT",
+      body: JSON.stringify({ reason }),
+    }),
+  getHostBookings: () => apiCall("/bookings/host"),
 };
 
 // Listings Service
@@ -187,9 +227,51 @@ export const bookingService = {
     }),
 };
 
+// M-Pesa Payment Service
+export const paymentService = {
+  initiateMpesa: (data) =>
+    apiCall("/payments/mpesa/stk-push", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  checkStatus: (checkoutRequestId) =>
+    apiCall(`/payments/status/${checkoutRequestId}`),
+};
+
+// Reviews Service
+export const reviewService = {
+  createReview: (data) =>
+    apiCall("/reviews/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getReviewsByService: (serviceId) =>
+    apiCall(`/reviews/service/${serviceId}`),
+
+  getHostReviews: () => apiCall("/reviews/host"),
+};
+
 export default {
   authService,
   userService,
   listingService,
   bookingService,
+  paymentService,
+  reviewService,
+  hostService,
+};
+// Admin Service
+export const adminService = {
+  getStats: () => apiCall("/users/admin/stats"),
+};
+
+// Jobs Service
+export const jobService = {
+  listActive: () => apiCall("/jobs"),
+  listAll: () => apiCall("/jobs/all"),
+  create: (data) => apiCall("/jobs", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => apiCall(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiCall(`/jobs/${id}`, { method: "DELETE" }),
 };

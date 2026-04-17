@@ -5,7 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/afristay svg.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Afristay</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Google Sign-In Library with cache busting -->
+    <script 
+      src="https://accounts.google.com/gsi/client" 
+      async 
+      defer
+      onload="window.googleLoaded = true"
+      onerror="console.error('Failed to load Google Sign-In library')"
+    ></script>
   </head>
   <body>
     <div id="root"></div>
