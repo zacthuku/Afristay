@@ -28,6 +28,7 @@ import Host from "./pages/Host";
 import Dashboard from "./pages/Dashboard";
 import MyBookings from "./pages/MyBookings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import { useContext } from "react";
 import { AppContext } from "./context/AppContext";
 
@@ -145,6 +146,7 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <AppRoutes />
         <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </BrowserRouter>

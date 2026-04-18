@@ -13,8 +13,28 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const savedScrollY = useRef(0);
 
   const { user, logout } = useContext(AppContext);
+
+  function openMenu() {
+    savedScrollY.current = window.scrollY;
+    setIsOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeMenu() {
+    setIsOpen(false);
+    // Restore position only if we haven't navigated (same tick)
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollY.current, behavior: "instant" });
+    });
+  }
+
+  function navigateFromMenu() {
+    setIsOpen(false);
+    // New page will scroll to top via ScrollToTop component
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,6 +59,7 @@ export default function Navbar() {
   ];
 
   return (
+    <>
     <nav className="sticky top-0 z-50 bg-[#FAF6EF] border-b border-[#E8D9B8] px-4 md:px-10 flex items-center justify-between h-[68px]">
 
       {/* Logo */}
@@ -165,7 +186,7 @@ export default function Navbar() {
 
       {/* Mobile Toggle */}
       <div className="md:hidden">
-        <button onClick={() => setIsOpen(!isOpen)}>
+        <button onClick={() => (isOpen ? closeMenu() : openMenu())}>
           <svg className="w-6 h-6 text-[#3D2B1A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -177,5 +198,95 @@ export default function Navbar() {
       </div>
 
     </nav>
+
+    {/* Mobile Menu */}
+    {isOpen && (
+      <div className="md:hidden bg-[#FAF6EF] border-b border-[#E8D9B8] px-4 pb-4">
+        {navLinks.map((link) => (
+          <Link
+            key={link.name}
+            to={link.path}
+            onClick={navigateFromMenu}
+            className="block text-[14px] font-medium text-[#5C4230] hover:text-[#C4622D] py-3 border-b border-[#E8D9B8] last:border-0"
+          >
+            {link.name}
+          </Link>
+        ))}
+
+        <div className="pt-4 flex flex-col gap-3">
+          {!user ? (
+            <>
+              <Link
+                to="/login"
+                onClick={navigateFromMenu}
+                className="border border-[#3D2B1A] px-5 py-2 rounded-full text-[14px] text-center"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={navigateFromMenu}
+                className="bg-[#C4622D] text-white px-5 py-2 rounded-full text-[14px] text-center"
+              >
+                Get Started
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 py-2">
+                <div className="w-9 h-9 flex items-center justify-center rounded-full bg-[#C4622D] text-white font-semibold text-sm">
+                  {getInitials(user)}
+                </div>
+                <span className="text-[14px] font-medium text-[#3D2B1A]">{user.name || user.email}</span>
+              </div>
+
+              <Link to="/profile" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                <span>👤</span> Profile
+              </Link>
+              <Link to="/bookings" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                <span>🗓️</span> My Bookings
+              </Link>
+              <Link to="/settings" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                <span>⚙️</span> Settings
+              </Link>
+
+              {user.role === "host" && (
+                <Link to="/host/dashboard" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                  <span>🏠</span> Host Dashboard
+                </Link>
+              )}
+
+              {user.role === "admin" && (
+                <>
+                  <Link to="/admin" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                    <span>📊</span> Admin Dashboard
+                  </Link>
+                  <Link to="/admin/users" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                    <span>👥</span> Manage Users
+                  </Link>
+                  <Link to="/admin/approvals" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                    <span>✅</span> Approvals
+                  </Link>
+                </>
+              )}
+
+              {user.role === "user" && (
+                <Link to="/dashboard" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
+                  <span>📊</span> My Dashboard
+                </Link>
+              )}
+
+              <button
+                onClick={() => { logout(); navigateFromMenu(); }}
+                className="flex items-center gap-2 py-2 text-[14px] text-red-500"
+              >
+                <span>🚪</span> Logout
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
