@@ -44,7 +44,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden">
+    <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden pb-16">
       {/* Image carousel */}
       {loadedImages.map((img, index) => (
         <div
