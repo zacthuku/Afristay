@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
-import { bookingService, paymentService } from "../services/api";
+import { bookingService, paymentService, cartService } from "../services/api";
 
 const BRAND = "#C4622D";
 
@@ -16,7 +16,12 @@ export function BookingCard({ listing }) {
   const [step, setStep] = useState("dates");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("mpesa");
   const [phone, setPhone] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -51,7 +56,7 @@ export function BookingCard({ listing }) {
     return null;
   }
 
-  function handleReserve() {
+  async function handleReserve() {
     const fe = {};
     if (!checkIn) fe.checkIn = true;
     if (!checkOut) fe.checkOut = true;
@@ -67,23 +72,42 @@ export function BookingCard({ listing }) {
     setFieldErrors({});
     setError("");
     if (!user) {
-      navigate(`/login?from=${location.pathname}`);
+      navigate("/login", { state: { from: location } });
       return;
     }
-    setStep("payment");
+    setLoading(true);
+    try {
+      await cartService.addItem({
+        service_id: listing.id,
+        check_in: `${checkIn}T14:00:00`,
+        check_out: `${checkOut}T11:00:00`,
+        quantity: 1,
+      });
+      toast.success("Added to cart!");
+      navigate("/cart");
+    } catch (err) {
+      toast.error(err.message || "Failed to add to cart");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handlePayment() {
-    if (!phone.trim()) {
-      setFieldErrors({ phone: true });
-      return;
+    const fe = {};
+    if (paymentMethod === "mpesa" || paymentMethod === "airtel") {
+      if (!phone.trim()) fe.phone = true;
+    } else {
+      if (!cardNumber.trim()) fe.cardNumber = true;
+      if (!cardExpiry.trim()) fe.cardExpiry = true;
+      if (!cardCvv.trim()) fe.cardCvv = true;
+      if (!cardName.trim()) fe.cardName = true;
     }
+    if (Object.keys(fe).length > 0) { setFieldErrors(fe); return; }
     setFieldErrors({});
     setError("");
     setLoading(true);
 
     try {
-      // 1. Create booking (status = "pending")
       const bookingData = await bookingService.createBooking({
         service_id: listing.id,
         start_time: `${checkIn}T14:00:00`,
@@ -92,13 +116,31 @@ export function BookingCard({ listing }) {
       });
       const newBookingId = bookingData.id;
 
-      // 2. Initiate M-Pesa STK Push
-      const paymentData = await paymentService.initiateMpesa({
-        booking_id: newBookingId,
-        phone: phone.trim(),
-      });
-      setStep("polling");
-      startPolling(paymentData.checkout_request_id);
+      if (paymentMethod === "mpesa") {
+        const paymentData = await paymentService.initiateMpesa({
+          booking_id: newBookingId,
+          phone: phone.trim(),
+        });
+        setStep("polling");
+        startPolling(paymentData.checkout_request_id);
+      } else if (paymentMethod === "airtel") {
+        const paymentData = await paymentService.initiateAirtel({
+          booking_id: newBookingId,
+          phone: phone.trim(),
+        });
+        setStep("polling");
+        startPolling(paymentData.checkout_request_id);
+      } else {
+        const paymentData = await paymentService.initiateCard({
+          booking_id: newBookingId,
+          card_number: cardNumber.replace(/\s/g, ""),
+          card_expiry: cardExpiry,
+          card_cvv: cardCvv,
+          card_name: cardName,
+        });
+        setStep("polling");
+        startPolling(paymentData.checkout_request_id);
+      }
     } catch (err) {
       setError(err.message || "Payment initiation failed. Please try again.");
     } finally {
@@ -203,10 +245,11 @@ export function BookingCard({ listing }) {
 
           <button
             onClick={handleReserve}
-            className="w-full py-3 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
+            disabled={loading}
+            className="w-full py-3 rounded-xl font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: BRAND }}
           >
-            Reserve
+            {loading ? "Adding to cart…" : "Reserve"}
           </button>
 
           {!user && (
@@ -219,17 +262,38 @@ export function BookingCard({ listing }) {
 
       {step === "payment" && (
         <>
-          <button
-            onClick={() => setStep("dates")}
-            className="text-sm text-[#C4622D] mb-4 hover:underline"
-          >
+          <button onClick={() => setStep("dates")} className="text-sm text-[#C4622D] mb-4 hover:underline">
             ← Back to dates
           </button>
 
-          <h3 className="text-lg font-semibold text-[#3D2B1A] mb-1">Pay with M-Pesa</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Enter your Safaricom number. You'll receive a prompt to enter your PIN.
-          </p>
+          <h3 className="text-lg font-semibold text-[#3D2B1A] mb-3">Choose payment method</h3>
+
+          {/* Payment method selector */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { id: "mpesa",  label: "M-Pesa",       color: "#00A650" },
+              { id: "airtel", label: "Airtel Money",  color: "#E40000" },
+              { id: "card",   label: "Visa / Card",   color: "#1A1F71" },
+            ].map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setPaymentMethod(m.id); setError(""); setFieldErrors({}); }}
+                className={`rounded-xl p-2 text-xs font-semibold border-2 transition-all ${
+                  paymentMethod === m.id
+                    ? "border-[#C4622D] bg-[#FAF6EF] text-[#3D2B1A]"
+                    : "border-[#E8D9B8] text-gray-500 hover:border-[#C4622D]/40"
+                }`}
+              >
+                <div
+                  className="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: m.color, fontSize: 9 }}
+                >
+                  {m.id === "mpesa" ? "M" : m.id === "airtel" ? "A" : "V"}
+                </div>
+                {m.label}
+              </button>
+            ))}
+          </div>
 
           <div className="bg-[#FAF6EF] rounded-lg p-3 mb-4 text-sm">
             <div className="flex justify-between text-gray-600">
@@ -242,21 +306,97 @@ export function BookingCard({ listing }) {
             </div>
           </div>
 
-          <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-            M-Pesa Phone Number <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            placeholder="e.g. 0712345678"
-            value={phone}
-            onChange={(e) => { setPhone(e.target.value); setError(""); setFieldErrors((p) => ({ ...p, phone: false })); }}
-            className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.phone ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
-          />
-          {fieldErrors.phone && <p className="text-red-500 text-xs mt-1 mb-2">M-Pesa phone number is required.</p>}
-
-          {error && (
-            <p className="text-red-600 text-sm mb-3">{error}</p>
+          {/* M-Pesa / Airtel Money fields */}
+          {(paymentMethod === "mpesa" || paymentMethod === "airtel") && (
+            <>
+              <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
+                {paymentMethod === "mpesa" ? "M-Pesa" : "Airtel"} Phone Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                placeholder={paymentMethod === "mpesa" ? "e.g. 0712345678" : "e.g. 0733123456"}
+                value={phone}
+                onChange={(e) => { setPhone(e.target.value); setError(""); setFieldErrors((p) => ({ ...p, phone: false })); }}
+                className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.phone ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
+              />
+              {fieldErrors.phone && <p className="text-red-500 text-xs mt-1 mb-2">Phone number is required.</p>}
+              <p className="text-xs text-gray-400 mt-1 mb-3">
+                {paymentMethod === "mpesa"
+                  ? "You'll receive a Safaricom STK prompt — enter your M-Pesa PIN."
+                  : "You'll receive an Airtel Money prompt — enter your PIN to confirm."}
+              </p>
+            </>
           )}
+
+          {/* Card fields */}
+          {paymentMethod === "card" && (
+            <>
+              <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
+                Name on card <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Jane Wanjiku"
+                value={cardName}
+                onChange={(e) => { setCardName(e.target.value); setError(""); setFieldErrors((p) => ({ ...p, cardName: false })); }}
+                className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] mb-2 ${fieldErrors.cardName ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
+              />
+              <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
+                Card number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={19}
+                placeholder="1234 5678 9012 3456"
+                value={cardNumber}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim();
+                  setCardNumber(v);
+                  setError("");
+                  setFieldErrors((p) => ({ ...p, cardNumber: false }));
+                }}
+                className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] mb-2 ${fieldErrors.cardNumber ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
+              />
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
+                    Expiry <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    maxLength={5}
+                    value={cardExpiry}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, "");
+                      if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2, 4);
+                      setCardExpiry(v);
+                      setError("");
+                      setFieldErrors((p) => ({ ...p, cardExpiry: false }));
+                    }}
+                    className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.cardExpiry ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
+                    CVV <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="•••"
+                    maxLength={4}
+                    value={cardCvv}
+                    onChange={(e) => { setCardCvv(e.target.value.replace(/\D/g, "")); setError(""); setFieldErrors((p) => ({ ...p, cardCvv: false })); }}
+                    className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.cardCvv ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">🔒 Secured with 256-bit SSL encryption.</p>
+            </>
+          )}
+
+          {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
           <button
             onClick={handlePayment}
@@ -264,7 +404,11 @@ export function BookingCard({ listing }) {
             className="w-full py-3 rounded-xl font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ backgroundColor: BRAND }}
           >
-            {loading ? "Initiating..." : `Pay KES ${total.toLocaleString()} via M-Pesa`}
+            {loading
+              ? "Processing..."
+              : `Pay KES ${total.toLocaleString()} via ${
+                  paymentMethod === "mpesa" ? "M-Pesa" : paymentMethod === "airtel" ? "Airtel Money" : "Card"
+                }`}
           </button>
         </>
       )}
@@ -274,9 +418,15 @@ export function BookingCard({ listing }) {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#C4622D] border-t-transparent mx-auto mb-4" />
           <h3 className="font-semibold text-[#3D2B1A] mb-1">Waiting for payment</h3>
           <p className="text-sm text-gray-600 mb-1">
-            A prompt has been sent to <strong>{phone}</strong>.
+            A payment prompt has been sent to <strong>{phone || "your card"}</strong>.
           </p>
-          <p className="text-sm text-gray-500 mb-5">Enter your M-Pesa PIN to complete the payment.</p>
+          <p className="text-sm text-gray-500 mb-5">
+            {paymentMethod === "mpesa"
+              ? "Enter your M-Pesa PIN to complete the payment."
+              : paymentMethod === "airtel"
+              ? "Enter your Airtel Money PIN to complete the payment."
+              : "Authorising your card payment..."}
+          </p>
           <div className="bg-[#FAF6EF] rounded-lg p-3 mb-5 text-sm">
             <div className="flex justify-between font-bold text-[#3D2B1A]">
               <span>Amount</span>

@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     DARAJA_CALLBACK_URL: str = "https://your-ngrok-url.ngrok.io/payments/mpesa/callback"
     DARAJA_ENV: str = "sandbox"  # "sandbox" or "production"
 
+    # Airtel Money (Airtel Africa Collection API)
+    AIRTEL_CLIENT_ID: str = ""
+    AIRTEL_CLIENT_SECRET: str = ""
+    AIRTEL_CALLBACK_URL: str = "https://your-ngrok-url.ngrok.io/payments/airtel/callback"
+    AIRTEL_ENV: str = "sandbox"  # "sandbox" or "production"
+
+    # Flutterwave Card Payments
+    FLUTTERWAVE_SECRET_KEY: str = ""
+    FLUTTERWAVE_PUBLIC_KEY: str = ""
+
     # SMTP Email
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

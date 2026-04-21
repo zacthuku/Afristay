@@ -179,6 +179,41 @@ class EmailService:
         return EmailService.send_email(email, subject, html_content)
 
     @staticmethod
+    def send_host_onboarding_email(name: str, email: str, temp_password: str) -> bool:
+        subject = "Welcome to AfriStay — Your Host Account is Ready"
+        html_content = f"""
+        <html>
+          <body style="font-family:Arial,sans-serif;color:#333;background:#f9f9f9;padding:20px;">
+            <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+              <h2 style="color:#C4622D;margin-top:0;">Welcome to AfriStay, {name}!</h2>
+              <p>Your host account has been created by the AfriStay team. You can start listing services immediately.</p>
+              <p>Use the credentials below to log in:</p>
+              <div style="background:#FAF6EF;border:1px solid #E8D9B8;border-radius:8px;padding:16px 20px;margin:24px 0;">
+                <p style="margin:0 0 8px;"><strong>Email:</strong> {email}</p>
+                <p style="margin:0;"><strong>Temporary Password:</strong>
+                  <span style="font-family:monospace;background:#fff;border:1px solid #ddd;padding:2px 8px;border-radius:4px;">{temp_password}</span>
+                </p>
+              </div>
+              <p style="color:#c53030;font-size:13px;">
+                &#9888; Please change your password after your first login via <strong>Settings → Change Password</strong>.
+              </p>
+              <div style="text-align:center;margin:28px 0;">
+                <a href="{settings.FRONTEND_URL}/login"
+                   style="background:#C4622D;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">
+                  Log In to AfriStay
+                </a>
+              </div>
+              <hr style="border:none;border-top:1px solid #eee;margin:24px 0;"/>
+              <p style="font-size:12px;color:#aaa;margin:0;">
+                &copy; AfriStay &mdash; Discover Africa's finest stays.
+              </p>
+            </div>
+          </body>
+        </html>
+        """
+        return EmailService.send_email(email, subject, html_content)
+
+    @staticmethod
     def send_service_rejection_email(host_name: str, email: str, service_title: str, reason: str = "") -> bool:
         subject = f"Update on Your Listing '{service_title}'"
         reason_block = f"""

@@ -1,32 +1,24 @@
 import { useEffect, useState, useContext } from "react";
+import { Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import { SearchBar } from "../components/SearchBar";
 
 export default function Hero() {
   const { listings, user } = useContext(AppContext);
   const [currentImage, setCurrentImage] = useState(0);
   const [loadedImages, setLoadedImages] = useState([]);
 
-  // Extract hero images from listings and preload them
   useEffect(() => {
     if (!listings || listings.length === 0) return;
-    
-    const images = listings.map(listing => listing.images?.[0]).filter(Boolean);
-    
+    const images = listings.map(l => l.images?.[0]).filter(Boolean);
     let isMounted = true;
     images.forEach((src) => {
       const img = new Image();
       img.src = src;
-      img.onload = () => {
-        if (!isMounted) return;
-        setLoadedImages(prev => [...prev, src]);
-      };
-      img.onerror = () => console.warn(`Image failed to load: ${src}`);
+      img.onload = () => { if (isMounted) setLoadedImages(prev => [...prev, src]); };
     });
     return () => { isMounted = false; };
   }, [listings]);
 
-  // Rotate images every 5s
   useEffect(() => {
     if (loadedImages.length === 0) return;
     const interval = setInterval(() => {
@@ -36,69 +28,55 @@ export default function Hero() {
   }, [loadedImages]);
 
   if (loadedImages.length === 0) {
-    return (
-      <section className="min-h-[90vh] flex items-center justify-center bg-gray-800 text-white">
-        Loading...
-      </section>
-    );
+    return <section className="min-h-[50vh] bg-gray-800" />;
   }
 
   return (
-    <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden pb-16">
+    <section className="relative min-h-[50vh] flex items-center overflow-hidden pb-10">
       {/* Image carousel */}
       {loadedImages.map((img, index) => (
         <div
           key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            index === currentImage ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 transition-opacity duration-1000 ${index === currentImage ? "opacity-100" : "opacity-0"}`}
           style={{ backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" }}
         />
       ))}
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50"></div>
+      <div className="absolute inset-0 bg-black/55" />
 
       {/* Content */}
-      <div className="relative z-10 px-6 md:px-12 max-w-[700px] text-left">
-        <p className="text-white/80 mb-4 text-sm md:text-base">
+      <div className="relative z-10 px-6 md:px-12 max-w-[620px]">
+        <p className="text-white/70 text-xs uppercase tracking-widest font-semibold mb-3">
           Africa's #1 Accommodation Marketplace
         </p>
-        <h1 className="text-white text-4xl md:text-6xl font-bold leading-tight mb-6">
+        <h1 className="text-white text-3xl md:text-5xl font-bold leading-tight mb-4">
           Discover authentic stays across Africa
         </h1>
-        <p className="text-white/70 text-base md:text-lg mb-8 max-w-[550px]">
-          From Nairobi city apartments to Maasai Mara safari lodges, Diani beachfront villas to Nanyuki mountain escapes — book with M-Pesa in seconds.
-        </p>
-        <div className="flex flex-wrap gap-4 mb-12">
-          <button className="bg-[#C4622D] text-white px-6 py-3 rounded-full">
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Link to="/search" className="bg-[#C4622D] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#a8521f] transition-colors">
             Explore stays
-          </button>
+          </Link>
           {user?.role !== "admin" && (
-            <button className="bg-white/20 backdrop-blur text-white px-6 py-3 rounded-full border border-white/30">
+            <Link to="/host" className="bg-white/20 backdrop-blur text-white px-5 py-2 rounded-full text-sm border border-white/30 hover:bg-white/30 transition-colors">
               Become a host
-            </button>
+            </Link>
           )}
         </div>
-        <div className="flex flex-wrap gap-10 text-white mb-12">
+        <div className="flex flex-wrap gap-6 text-white">
           <div>
-            <div className="text-3xl font-bold">2,400+</div>
-            <div className="text-white/60 text-sm">Unique stays</div>
+            <div className="text-xl font-bold">2,400+</div>
+            <div className="text-white/60 text-xs">Unique stays</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">8 cities</div>
-            <div className="text-white/60 text-sm">Across East Africa</div>
+            <div className="text-xl font-bold">8 cities</div>
+            <div className="text-white/60 text-xs">Across East Africa</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">M-Pesa</div>
-            <div className="text-white/60 text-sm">Native payments</div>
+            <div className="text-sm font-bold leading-snug">M-Pesa · Airtel · Visa</div>
+            <div className="text-white/60 text-xs">3 payment methods</div>
           </div>
         </div>
-      </div>
-
-      {/* Smart SearchBar resting halfway at bottom of hero */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-50px] w-full px-4 z-20">
-        
       </div>
     </section>
   );

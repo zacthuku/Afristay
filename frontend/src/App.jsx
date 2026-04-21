@@ -27,6 +27,8 @@ import AdminApprovals from "./pages/AdminApprovals";
 import Host from "./pages/Host";
 import Dashboard from "./pages/Dashboard";
 import MyBookings from "./pages/MyBookings";
+import Cart from "./pages/Cart";
+import TripPlanner from "./pages/TripPlanner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import { useContext } from "react";
@@ -55,6 +57,7 @@ function AppRoutes() {
         <Route path="/host-resources" element={<HostResources />} />
         <Route path="/responsible-hosting" element={<ResponsibleHosting />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/plan" element={<TripPlanner />} />
 
         {/* User protected routes */}
         <Route
@@ -80,6 +83,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute user={user}>
               <MyBookings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute user={user}>
+              <Cart />
             </ProtectedRoute>
           }
         />

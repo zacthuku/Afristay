@@ -66,6 +66,20 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleMakeAdmin(userId, label) {
+    if (!window.confirm(`Promote "${label}" to admin? This grants full platform access.`)) return;
+    setActing(userId);
+    try {
+      await userService.makeAdmin(userId);
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: "admin" } : u));
+      toast.success("User promoted to admin.");
+    } catch (e) {
+      toast.error(e.message || "Failed to promote user.");
+    } finally {
+      setActing(null);
+    }
+  }
+
   const counts = {
     all:    users.length,
     admin:  users.filter((u) => u.role === "admin").length,
@@ -164,6 +178,15 @@ export default function AdminUsers() {
                               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${u.is_blocked ? "border-green-300 text-green-600 hover:bg-green-50" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
                             >
                               {u.is_blocked ? "Unblock" : "Block"}
+                            </button>
+                          )}
+                          {u.role !== "admin" && (
+                            <button
+                              disabled={acting === u.id}
+                              onClick={() => handleMakeAdmin(u.id, u.name || u.email)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50"
+                            >
+                              Make Admin
                             </button>
                           )}
                           {u.role !== "admin" && (

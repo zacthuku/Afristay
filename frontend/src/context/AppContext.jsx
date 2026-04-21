@@ -1,11 +1,23 @@
 import { createContext, useState, useEffect, useCallback } from "react";
-import { listingService, userService } from "../services/api";
+import { listingService, userService, cartService } from "../services/api";
 
 export const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // CART COUNT
+  const [cartCount, setCartCount] = useState(0);
+
+  const refreshCartCount = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) { setCartCount(0); return; }
+    try {
+      const items = await cartService.getCart();
+      setCartCount(Array.isArray(items) ? items.length : items?.items?.length ?? 0);
+    } catch { setCartCount(0); }
+  }, []);
 
   // ✅ LOAD USER FROM LOCAL STORAGE
   useEffect(() => {
@@ -26,6 +38,7 @@ export function AppProvider({ children }) {
         const freshUser = await userService.getCurrentUser();
         localStorage.setItem("user", JSON.stringify(freshUser));
         setUser(freshUser);
+        refreshCartCount();
       } catch (err) {
         console.error("Failed to refresh user:", err);
         // Only clear if it's a 401 error
@@ -54,6 +67,7 @@ export function AppProvider({ children }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
+    setCartCount(0);
   }, []);
 
   // DATA DOMAINS
@@ -72,61 +86,45 @@ export function AppProvider({ children }) {
   const [bookings, setBookings] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Fetch listings on component mount
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        setLoading(true);
-        const data = await listingService.getAllListings();
-        setListings(data);
-        setSearchResults(data);
-      } catch (err) {
-        setError(err.message);
-        console.error("Failed to fetch listings:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchListings();
-  }, []);
-
-  // Category keyword map for discovery filtering
-  const CATEGORY_KEYWORDS = {
-    safari: ["safari", "lodge", "mara", "wildlife", "amboseli", "tsavo", "game", "savanna"],
-    beach: ["beach", "coastal", "ocean", "diani", "mombasa", "watamu", "malindi", "sea", "shore"],
-    city: ["nairobi", "city", "apartment", "urban", "westlands", "kilimani", "cbd"],
-    weekend: ["getaway", "countryside", "retreat", "nanyuki", "naivasha", "limuru", "machakos", "sagana", "mountain"],
+  // Category → location keyword map for server-side search
+  const CATEGORY_LOCATION = {
+    safari: "mara",
+    beach: "mombasa",
+    city: "nairobi",
+    weekend: "naivasha",
   };
 
-  // SEARCH LOGIC (SMART)
+  // Fetch listings — supports server-side filters
+  const fetchListings = useCallback(async (params = {}) => {
+    try {
+      setLoading(true);
+      const data = await listingService.getAllListings(params);
+      setListings(data);
+      setSearchResults(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  // SERVER-SIDE SEARCH
   const handleSearch = useCallback(({ query = "", mode = "", type = "", experience = "", category = "" } = {}) => {
     setSearchQuery(query);
     setSearchFilters({ mode, type, experience });
 
-    const q = query.toLowerCase();
-    const cat = category.toLowerCase();
+    const params = {};
+    if (query) params.q = query;
+    if (type) params.type = type;
+    if (category && CATEGORY_LOCATION[category]) params.location = CATEGORY_LOCATION[category];
+    else if (category) params.q = query || category;
 
-    const results = listings.filter((item) => {
-      const text = [
-        item.title || "",
-        item.description || "",
-        item.location || "",
-        ...(item.amenities || []),
-      ].join(" ").toLowerCase();
-
-      const matchesQuery = !q || text.includes(q);
-
-      const matchesCategory = !cat || (() => {
-        const keywords = CATEGORY_KEYWORDS[cat] || [cat];
-        return keywords.some((kw) => text.includes(kw));
-      })();
-
-      return matchesQuery && matchesCategory;
-    });
-
-    setSearchResults(results);
-  }, [listings]);
+    fetchListings(params);
+  }, [fetchListings]);
 
   // BOOKING LOGIC
   const createBooking = useCallback((item, dates) => {
@@ -146,6 +144,8 @@ export function AppProvider({ children }) {
         isInitializing,
         login,
         logout,
+        cartCount,
+        refreshCartCount,
         listings,
         loading,
         error,

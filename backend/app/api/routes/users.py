@@ -1,7 +1,10 @@
+import secrets
+import string
 from typing import Optional
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -9,10 +12,23 @@ from app.db.session import get_db
 from app.models import User, Service, Booking
 from app.schemas.user import UserUpdate, UserBlockRequest
 from app.services.email_service import EmailService
+from app.core.security import hash_password
 
 
 class RejectBody(BaseModel):
     reason: Optional[str] = ""
+
+
+class AdminOnboardHostBody(BaseModel):
+    name: str
+    email: str
+    password: Optional[str] = None
+    phone: Optional[str] = None
+
+
+def _generate_otp(length: int = 12) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class HostApplicationBody(BaseModel):
@@ -302,4 +318,114 @@ def admin_stats(current_user=Depends(get_current_user), db: Session = Depends(ge
             }
             for b in recent_bookings
         ],
+    }
+
+
+@router.get("/admin/monthly-stats")
+def admin_monthly_stats(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_admin(current_user)
+
+    # Build last 6 months list
+    today = date.today()
+    months = []
+    for i in range(5, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        months.append((y, m))
+
+    result = []
+    for year, month in months:
+        revenue = db.query(func.sum(Booking.total_price)).filter(
+            Booking.status == "confirmed",
+            extract("year", Booking.created_at) == year,
+            extract("month", Booking.created_at) == month,
+        ).scalar() or 0
+
+        bookings_count = db.query(func.count(Booking.id)).filter(
+            extract("year", Booking.created_at) == year,
+            extract("month", Booking.created_at) == month,
+        ).scalar() or 0
+
+        new_users = db.query(func.count(User.id)).filter(
+            extract("year", User.created_at) == year,
+            extract("month", User.created_at) == month,
+        ).scalar() or 0
+
+        result.append({
+            "month": date(year, month, 1).strftime("%b %Y"),
+            "label": date(year, month, 1).strftime("%b"),
+            "revenue": float(revenue),
+            "bookings": int(bookings_count),
+            "new_users": int(new_users),
+        })
+
+    return result
+
+
+@router.post("/admin/onboard-host")
+def admin_onboard_host(
+    body: AdminOnboardHostBody,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+
+    existing = db.query(User).filter(User.email == body.email).first()
+    if existing:
+        raise HTTPException(400, "Email already registered")
+
+    raw_password = body.password or _generate_otp()
+
+    new_user = User(
+        name=body.name,
+        email=body.email,
+        hashed_password=hash_password(raw_password),
+        phone=body.phone,
+        role="host",
+        host_application_status="approved",
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    EmailService.send_host_onboarding_email(body.name, body.email, raw_password)
+
+    return {
+        "message": "Host onboarded successfully",
+        "user": {
+            "id": str(new_user.id),
+            "name": new_user.name,
+            "email": new_user.email,
+            "role": new_user.role,
+            "host_application_status": new_user.host_application_status,
+        },
+    }
+
+
+@router.put("/{user_id}/make-admin")
+def make_admin(
+    user_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+    if user.role == "admin":
+        raise HTTPException(400, "User is already an admin")
+    user.role = "admin"
+    db.commit()
+    db.refresh(user)
+    return {
+        "message": "User promoted to admin",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+        },
     }

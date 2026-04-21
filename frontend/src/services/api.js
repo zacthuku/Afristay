@@ -157,6 +157,7 @@ export const userService = {
       method: "PUT",
       body: JSON.stringify({ reason }),
     }),
+  makeAdmin: (id) => apiCall(`/users/${id}/make-admin`, { method: "PUT" }),
 };
 
 export const hostService = {
@@ -227,12 +228,24 @@ export const bookingService = {
     }),
 };
 
-// M-Pesa Payment Service
+// Payment Service — M-Pesa, Airtel Money, Card
 export const paymentService = {
   initiateMpesa: (data) =>
     apiCall("/payments/mpesa/stk-push", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  initiateAirtel: (data) =>
+    apiCall("/payments/airtel/stk-push", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  initiateCard: (bookingId) =>
+    apiCall("/payments/card/charge", {
+      method: "POST",
+      body: JSON.stringify({ booking_id: bookingId }),
     }),
 
   checkStatus: (checkoutRequestId) =>
@@ -265,6 +278,35 @@ export default {
 // Admin Service
 export const adminService = {
   getStats: () => apiCall("/users/admin/stats"),
+  getMonthlyStats: () => apiCall("/users/admin/monthly-stats"),
+  onboardHost: (data) => apiCall("/users/admin/onboard-host", { method: "POST", body: JSON.stringify(data) }),
+};
+
+// Cart Service
+export const cartService = {
+  getCart: () => apiCall("/cart"),
+  addItem: (data) => apiCall("/cart/add", { method: "POST", body: JSON.stringify(data) }),
+  updateItem: (itemId, data) => apiCall(`/cart/${itemId}`, { method: "PUT", body: JSON.stringify(data) }),
+  removeItem: (itemId) => apiCall(`/cart/${itemId}`, { method: "DELETE" }),
+  clearCart: () => apiCall("/cart", { method: "DELETE" }),
+};
+
+// Trip Service
+export const tripService = {
+  generate: (data) => apiCall("/trips/generate", { method: "POST", body: JSON.stringify(data) }),
+  getSuggestions: (destination) => apiCall(`/trips/suggestions?destination=${encodeURIComponent(destination)}`),
+  save: (data) => apiCall("/trips/save", { method: "POST", body: JSON.stringify(data) }),
+  getSaved: () => apiCall("/trips/saved"),
+  deleteTrip: (id) => apiCall(`/trips/${id}`, { method: "DELETE" }),
+  getActivities: (destination) =>
+    apiCall(`/trips/activities?destination=${encodeURIComponent(destination)}`),
+  bookActivity: (data) =>
+    apiCall("/trips/activity-bookings", { method: "POST", body: JSON.stringify(data) }),
+  getActivityBookings: () => apiCall("/trips/activity-bookings"),
+  getActivityPaymentStatus: (id) => apiCall(`/trips/activity-bookings/${id}/payment-status`),
+  retryActivityPayment: (id, data) => apiCall(`/trips/activity-bookings/${id}/pay`, { method: "POST", body: JSON.stringify(data) }),
+  updateActivityBooking: (id, data) => apiCall(`/trips/activity-bookings/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  cancelActivityBooking: (id) => apiCall(`/trips/activity-bookings/${id}`, { method: "DELETE" }),
 };
 
 // Jobs Service

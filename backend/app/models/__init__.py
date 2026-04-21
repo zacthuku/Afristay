@@ -10,6 +10,7 @@ from app.models.all_models import (
     TripSegment,
     Payment,
     JobOpening,
+    CartItem,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "TripSegment",
     "Payment",
     "JobOpening",
+    "CartItem",
 ]

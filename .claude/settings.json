@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python -m alembic revision --autogenerate -m \"add_cart_items_table\")",
+      "Bash(python3 -m alembic revision --autogenerate -m \"add_cart_items_table\")",
+      "Bash(pip3 install *)",
+      "Read(//home/zac/**)",
+      "Bash(node --input-type=module --eval \"import\\('./src/pages/TripPlanner.jsx'\\)\")",
+      "Bash(python3 -m py_compile backend/app/api/routes/trips.py)",
+      "Bash(npx vite *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

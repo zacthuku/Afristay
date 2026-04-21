@@ -1,7 +1,11 @@
+import os
+import shutil
+import uuid as uuid_lib
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, func
 from geoalchemy2.elements import WKTElement
 
 from app.api.deps import get_current_user
@@ -9,6 +13,9 @@ from app.db.session import get_db
 from app.models.all_models import Service, User
 from app.schemas.service import ServiceCreate, ServiceUpdate
 from app.services.email_service import EmailService
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class RejectBody(BaseModel):
@@ -43,8 +50,36 @@ def serialize_service(service: Service):
 
 
 @router.get("/")
-def get_services(db: Session = Depends(get_db)):
-    services = db.query(Service).filter(Service.approval_status == "approved").all()
+def get_services(
+    q: Optional[str] = None,
+    type: Optional[str] = None,
+    location: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Service).filter(Service.approval_status == "approved")
+
+    if type:
+        query = query.filter(Service.type == type)
+    if min_price is not None:
+        query = query.filter(Service.price_base >= min_price)
+    if max_price is not None:
+        query = query.filter(Service.price_base <= max_price)
+    if q:
+        term = f"%{q.lower()}%"
+        query = query.filter(
+            or_(
+                func.lower(Service.title).like(term),
+                func.lower(Service.description).like(term),
+                Service.service_metadata["location"].astext.ilike(term),
+            )
+        )
+    elif location:
+        term = f"%{location.lower()}%"
+        query = query.filter(Service.service_metadata["location"].astext.ilike(term))
+
+    services = query.order_by(Service.created_at.desc()).all()
     return [serialize_service(s) for s in services]
 
 
@@ -205,3 +240,37 @@ def get_service(service_id: str, db: Session = Depends(get_db)):
         return {"error": "Service not found"}
 
     return serialize_service(service)
+
+
+@router.post("/{service_id}/photos")
+async def upload_photo(
+    service_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(404, "Service not found")
+    if service.host_id != user.id and user.role != "admin":
+        raise HTTPException(403, "Not authorized")
+
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(400, "Only JPEG, PNG, or WebP images are allowed")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+    filename = f"{uuid_lib.uuid4()}.{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+
+    with open(path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    url = f"/uploads/{filename}"
+    meta = service.service_metadata or {}
+    images = meta.get("images", [])
+    images.append(url)
+    service.service_metadata = {**meta, "images": images}
+    db.commit()
+
+    return {"url": url, "images": images}

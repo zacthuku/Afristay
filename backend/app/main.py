@@ -1,8 +1,17 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Receive, Scope, Send
-from app.api.routes import auth, users, services, bookings, payments, reviews, jobs
+from starlette.types import ASGIApp
+
+from app.api.routes import auth, users, services, bookings, payments, reviews, jobs, cart, trips
+
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
 
 class CrossOriginOpenerPolicyMiddleware(BaseHTTPMiddleware):
@@ -17,6 +26,9 @@ class CrossOriginOpenerPolicyMiddleware(BaseHTTPMiddleware):
 
 
 app = FastAPI(title="Afristay API")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS
 app.add_middleware(
@@ -33,13 +45,20 @@ app.add_middleware(
     policy="same-origin-allow-popups"
 )
 
+# Serve uploaded images as static files
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 app.include_router(auth.router)
-app.include_router(users.router)  
+app.include_router(users.router)
 app.include_router(services.router)
 app.include_router(bookings.router)
 app.include_router(payments.router)
 app.include_router(reviews.router)
 app.include_router(jobs.router)
+app.include_router(cart.router)
+app.include_router(trips.router)
+
 
 @app.get("/")
 async def root():

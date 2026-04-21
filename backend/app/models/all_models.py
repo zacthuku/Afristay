@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
 from sqlalchemy import (
-    String, Integer, Boolean, DateTime, ForeignKey,
+    String, Integer, Boolean, DateTime, Date, ForeignKey,
     CheckConstraint, Numeric, Text
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -46,6 +46,8 @@ class User(Base):
     trips = relationship("Trip", back_populates="user")
     bookings = relationship("Booking", back_populates="user")
     reviews = relationship("Review", back_populates="user")
+    cart_items = relationship("CartItem", back_populates="user")
+    activity_bookings = relationship("ActivityBooking", back_populates="user", cascade="all, delete-orphan")
 
 
 # =========================
@@ -169,6 +171,11 @@ class Trip(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE")
     )
+
+    destination: Mapped[str] = mapped_column(String, nullable=True)
+    purpose: Mapped[str] = mapped_column(String, nullable=True)
+    check_in: Mapped[date] = mapped_column(Date, nullable=True)
+    check_out: Mapped[date] = mapped_column(Date, nullable=True)
 
     status: Mapped[str] = mapped_column(String, default="planned")
 
@@ -323,6 +330,34 @@ class Review(Base):
 
 
 # =========================
+# CART ITEMS
+# =========================
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE")
+    )
+    service_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("services.id", ondelete="CASCADE")
+    )
+
+    check_in: Mapped[datetime] = mapped_column(DateTime)
+    check_out: Mapped[datetime] = mapped_column(DateTime)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    saved_price: Mapped[float] = mapped_column(Numeric)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="cart_items")
+    service = relationship("Service")
+
+
+# =========================
 # JOB OPENINGS
 # =========================
 class JobOpening(Base):
@@ -337,3 +372,27 @@ class JobOpening(Base):
     requirements: Mapped[str] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# ACTIVITY BOOKINGS
+# =========================
+class ActivityBooking(Base):
+    __tablename__ = "activity_bookings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    activity_id: Mapped[str] = mapped_column(String, nullable=False)
+    activity_name: Mapped[str] = mapped_column(String, nullable=False)
+    activity_location: Mapped[str] = mapped_column(String, nullable=False)
+    destination: Mapped[str] = mapped_column(String, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    time: Mapped[str] = mapped_column(String, nullable=False)
+    participants: Mapped[int] = mapped_column(Integer, default=1)
+    total_fee: Mapped[float] = mapped_column(Numeric, nullable=False)
+    status: Mapped[str] = mapped_column(String, default="confirmed")
+    payment_status: Mapped[str] = mapped_column(String, default="unpaid")
+    payment_reference: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="activity_bookings")

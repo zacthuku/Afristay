@@ -23,7 +23,11 @@ def google_auth(db: Session, token: str):
     name = payload.get("name") or payload.get("given_name")
     google_id = payload.get("sub")
 
+    # Look up by google_id first, then fall back to email (account may have been
+    # created via password before the user tried Google login).
     user = db.query(User).filter(User.google_id == google_id).first()
+    if not user:
+        user = db.query(User).filter(User.email == email).first()
 
     if user and user.is_blocked:
         raise HTTPException(403, "This account has been blocked")
@@ -35,14 +39,20 @@ def google_auth(db: Session, token: str):
             google_id=google_id,
             auth_provider="google",
             role="client",
-            is_verified=True
+            is_verified=True,
         )
         db.add(user)
         db.commit()
         db.refresh(user)
     else:
+        changed = False
+        if not user.google_id:
+            user.google_id = google_id
+            changed = True
         if name and not user.name:
             user.name = name
+            changed = True
+        if changed:
             db.commit()
             db.refresh(user)
 
