@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    REDIS_URL: str
+    REDIS_URL: str = ""  # Optional - can be empty
     SECRET_KEY: str
     GOOGLE_CLIENT_ID: str = "YOUR_CLIENT_ID"  # Set in .env file
 
