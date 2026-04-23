@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     AIRTEL_CALLBACK_URL: str = "https://your-ngrok-url.ngrok.io/payments/airtel/callback"
     AIRTEL_ENV: str = "sandbox"  # "sandbox" or "production"
 
+    # Cloudinary Image Storage
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
     # Flutterwave Card Payments
     FLUTTERWAVE_SECRET_KEY: str = ""
     FLUTTERWAVE_PUBLIC_KEY: str = ""

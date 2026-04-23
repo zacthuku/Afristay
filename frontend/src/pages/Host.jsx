@@ -784,7 +784,7 @@ const EMPTY_FORM = {
   location: "",
   country_code: "",
   amenities: "",
-  images: "",
+  images: [],
   host_avatar: "",
   superhost: false,
   // accommodation
@@ -813,6 +813,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(editingService ? buildFormFromService(editingService) : { ...EMPTY_FORM });
   const [formErrors, setFormErrors] = useState({});
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   function buildFormFromService(s) {
     const meta = s.service_metadata || {};
@@ -825,7 +826,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
       country_code: s.country_code || "",
       location: meta.location || s.location || "",
       amenities: (meta.amenities || []).join(", "),
-      images: (meta.images || []).join(", "),
+      images: meta.images || [],
       host_avatar: meta.host_avatar || "",
       superhost: meta.superhost || false,
       rooms: meta.rooms || "",
@@ -1028,11 +1029,52 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
               <p className="text-xs text-gray-400 mt-1">The country where this service is based.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Image URLs</label>
-              <input value={form.images} onChange={(e) => set("images", e.target.value)}
-                placeholder="Comma-separated image URLs"
-                className="w-full rounded-2xl border border-gray-200 p-3 focus:outline-none focus:border-[#C4622D]"
-              />
+              <label className="block text-sm font-medium mb-1">Photos</label>
+              <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-colors ${uploadingImages ? "opacity-50 pointer-events-none" : "border-gray-200 hover:border-[#C4622D]"}`}>
+                <span className="text-2xl">📷</span>
+                <span className="text-sm text-gray-500">
+                  {uploadingImages ? "Uploading…" : "Click to upload photos (JPEG, PNG, WebP)"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  disabled={uploadingImages}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files);
+                    if (!files.length) return;
+                    setUploadingImages(true);
+                    try {
+                      const urls = await Promise.all(
+                        files.map((f) => hostService.uploadTempPhoto(f).then((r) => r.url))
+                      );
+                      set("images", [...(form.images || []), ...urls]);
+                    } catch (err) {
+                      toast.error(err.message || "Image upload failed");
+                    } finally {
+                      setUploadingImages(false);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </label>
+              {form.images?.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {form.images.map((url, i) => (
+                    <div key={i} className="relative group rounded-xl overflow-hidden aspect-video bg-gray-100">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => set("images", form.images.filter((_, j) => j !== i))}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Accommodation-specific */}
@@ -1410,7 +1452,7 @@ export default function Host() {
       price_base: Number(form.price_base),
       location: form.location,
       amenities: form.amenities.split(",").map((s) => s.trim()).filter(Boolean),
-      images: form.images.split(",").map((s) => s.trim()).filter(Boolean),
+      images: form.images,
       host_avatar: form.host_avatar || undefined,
       superhost: form.superhost,
       ...(form.type === "accommodation" && {

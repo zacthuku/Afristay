@@ -7,13 +7,26 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from geoalchemy2.elements import WKTElement
+import cloudinary
+import cloudinary.uploader
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.all_models import Service, User
 from app.schemas.service import ServiceCreate, ServiceUpdate
 from app.services.email_service import EmailService
 
+# Configure Cloudinary if credentials are present
+if settings.CLOUDINARY_CLOUD_NAME:
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+
+# Local fallback for development (when Cloudinary not configured)
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -241,6 +254,38 @@ def reject_service(
     return {"message": "Service rejected", "service": serialize_service(service)}
 
 
+@router.post("/upload")
+async def upload_temp_photo(
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
+):
+    """Upload a photo before the service exists — returns a Cloudinary URL."""
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(400, "Only JPEG, PNG, or WebP images are allowed")
+
+    if settings.CLOUDINARY_CLOUD_NAME:
+        try:
+            result = cloudinary.uploader.upload(
+                file.file,
+                folder="afristay/services",
+                public_id=str(uuid_lib.uuid4()),
+                overwrite=True,
+                resource_type="image",
+                transformation=[{"width": 1200, "crop": "limit", "quality": "auto:good"}],
+            )
+            return {"url": result["secure_url"]}
+        except Exception as e:
+            raise HTTPException(502, f"Image upload failed: {str(e)}")
+    else:
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        filename = f"{uuid_lib.uuid4()}.{ext}"
+        path = os.path.join(UPLOAD_DIR, filename)
+        with open(path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        return {"url": f"/uploads/{filename}"}
+
+
 @router.get("/{service_id}")
 def get_service(service_id: str, db: Session = Depends(get_db)):
     service = db.query(Service).filter(Service.id == service_id).first()
@@ -268,14 +313,29 @@ async def upload_photo(
     if file.content_type not in allowed:
         raise HTTPException(400, "Only JPEG, PNG, or WebP images are allowed")
 
-    ext = file.filename.rsplit(".", 1)[-1].lower()
-    filename = f"{uuid_lib.uuid4()}.{ext}"
-    path = os.path.join(UPLOAD_DIR, filename)
+    if settings.CLOUDINARY_CLOUD_NAME:
+        # Upload to Cloudinary
+        try:
+            result = cloudinary.uploader.upload(
+                file.file,
+                folder="afristay/services",
+                public_id=str(uuid_lib.uuid4()),
+                overwrite=True,
+                resource_type="image",
+                transformation=[{"width": 1200, "crop": "limit", "quality": "auto:good"}],
+            )
+            url = result["secure_url"]
+        except Exception as e:
+            raise HTTPException(502, f"Image upload failed: {str(e)}")
+    else:
+        # Local fallback (development only)
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        filename = f"{uuid_lib.uuid4()}.{ext}"
+        path = os.path.join(UPLOAD_DIR, filename)
+        with open(path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        url = f"/uploads/{filename}"
 
-    with open(path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    url = f"/uploads/{filename}"
     meta = service.service_metadata or {}
     images = meta.get("images", [])
     images.append(url)

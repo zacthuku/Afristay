@@ -172,6 +172,32 @@ export const hostService = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  uploadPhoto: async (serviceId, file) => {
+    const token = localStorage.getItem("token");
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE_URL}/services/${serviceId}/photos`, {
+      method: "POST",
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Upload failed");
+    return data;
+  },
+  uploadTempPhoto: async (file) => {
+    const token = localStorage.getItem("token");
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE_URL}/services/upload`, {
+      method: "POST",
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Upload failed");
+    return data;
+  },
   getPendingServices: () => apiCall("/services/pending"),
   approveService: (id) =>
     apiCall(`/services/${id}/approve`, { method: "PUT" }),
