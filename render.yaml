@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: afristay-api
+    env: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false                      # set manually in Render dashboard
+      - key: SECRET_KEY
+        sync: false                      # set manually in Render dashboard
+      - key: GOOGLE_CLIENT_ID
+        sync: false                      # set manually in Render dashboard
+      - key: FRONTEND_URL
+        sync: false                      # set to your deployed frontend URL
+      - key: REDIS_URL
+        value: ""                        # leave empty — Redis is optional
+      - key: DARAJA_CONSUMER_KEY
+        value: ""
+      - key: DARAJA_CONSUMER_SECRET
+        value: ""
+      - key: DARAJA_SHORTCODE
+        value: "174379"
+      - key: DARAJA_PASSKEY
+        value: ""
+      - key: DARAJA_CALLBACK_URL
+        value: ""
+      - key: DARAJA_ENV
+        value: "sandbox"
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: "AfriStay"

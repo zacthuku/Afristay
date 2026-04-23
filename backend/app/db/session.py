@@ -8,7 +8,7 @@ sync_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://
 # Sync engine for app runtime
 engine = create_engine(
     sync_url,
-    echo=True,
+    echo=False,
     pool_pre_ping=True,
 )
 
