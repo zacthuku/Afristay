@@ -12,7 +12,7 @@ from app.api.routes import auth, users, services, bookings, payments, reviews, j
 from app.api.routes.countries import router as countries_router
 from app.api.routes.config import router as config_router
 from app.api.routes.stats import router as stats_router
-
+from app.core.config import settings
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
