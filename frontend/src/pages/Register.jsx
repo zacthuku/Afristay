@@ -2,6 +2,7 @@ import { useState, useContext, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { authService, userService } from "../services/api";
+import { validateEmail } from "../utils/validate";
 
 
 // 🔥 Icons
@@ -77,7 +78,8 @@ export default function Register() {
 
   const handleRegister = async () => {
     const newErrors = {};
-    if (!email.trim()) newErrors.email = true;
+    const emailErr = validateEmail(email);
+    if (emailErr) newErrors.email = emailErr;
     if (!password) newErrors.password = true;
     if (!confirmPassword) newErrors.confirmPassword = true;
     if (password && confirmPassword && password !== confirmPassword) newErrors.passwordMismatch = true;
@@ -171,7 +173,7 @@ export default function Register() {
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: false })); }}
               disabled={loading}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">Email is required.</p>}
+            {errors.email && <p className="text-red-500 text-xs mt-1">{typeof errors.email === "string" ? errors.email : "Email is required."}</p>}
           </div>
 
           {/* PASSWORD */}

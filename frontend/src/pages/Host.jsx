@@ -2,55 +2,16 @@ import { useEffect, useState, useContext, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
-import { hostService, userService } from "../services/api";
+import { hostService, userService, configService, countryService } from "../services/api";
 
-// ─── Static data ─────────────────────────────────────────────────────────────
-
-const SERVICE_TYPES = [
-  {
-    value: "accommodation",
-    label: "Accommodation",
-    icon: "🏠",
-    desc: "Homes, villas, apartments, lodges",
-    pricingTypes: ["per_night", "fixed"],
-  },
-  {
-    value: "transport",
-    label: "Ground Transport",
-    icon: "🚗",
-    desc: "Taxis, shuttles, private hire",
-    pricingTypes: ["per_km", "per_hour", "fixed"],
-  },
-  {
-    value: "flight",
-    label: "Flight / Air Charter",
-    icon: "✈️",
-    desc: "Domestic flights, air charters",
-    pricingTypes: ["fixed", "per_person"],
-  },
-  {
-    value: "tour",
-    label: "Tour & Experience",
-    icon: "🗺️",
-    desc: "Safari, city tours, day trips",
-    pricingTypes: ["per_person", "fixed"],
-  },
-  {
-    value: "car_rental",
-    label: "Car Rental",
-    icon: "🔑",
-    desc: "Self-drive hire, fleet rentals",
-    pricingTypes: ["per_day", "fixed"],
-  },
-];
-
+// UI-only labels for known pricing slugs (not domain data)
 const PRICING_LABELS = {
-  per_night: "Per Night",
-  per_hour: "Per Hour",
-  fixed: "Fixed Price",
-  per_km: "Per KM",
+  per_night:  "Per Night",
+  per_hour:   "Per Hour",
+  fixed:      "Fixed Price",
+  per_km:     "Per KM",
   per_person: "Per Person",
-  per_day: "Per Day",
+  per_day:    "Per Day",
 };
 
 const STEPS = ["Choose Type", "Service Details", "API / Integration", "Review"];
@@ -110,7 +71,7 @@ function StepIndicator({ step, steps }) {
           >
             {label}
           </span>
-          {i < STEPS.length - 1 && (
+          {i < labels.length - 1 && (
             <div className={`w-8 h-0.5 ${i < step ? "bg-[#C4622D]" : "bg-gray-200"}`} />
           )}
         </div>
@@ -123,7 +84,7 @@ function ServiceTypeCard({ type, selected, onClick }) {
   return (
     <button
       type="button"
-      onClick={() => onClick(type.value)}
+      onClick={() => onClick(type.slug)}
       className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
         selected
           ? "border-[#C4622D] bg-[#FFF5EE] shadow-md"
@@ -132,7 +93,7 @@ function ServiceTypeCard({ type, selected, onClick }) {
     >
       <div className="text-2xl mb-1">{type.icon}</div>
       <div className="font-semibold text-[#3D2B1A] text-sm">{type.label}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{type.desc}</div>
+      <div className="text-xs text-gray-500 mt-0.5">{type.description}</div>
     </button>
   );
 }
@@ -509,7 +470,7 @@ function HostApplicationForm({ user, loading, onSubmit, onBack }) {
 
 // ─── Unauthenticated landing ─────────────────────────────────────────────────
 
-function GuestLanding() {
+function GuestLanding({ serviceTypes }) {
   return (
     <div className="space-y-12">
       {/* Hero */}
@@ -573,14 +534,14 @@ function GuestLanding() {
       <div>
         <h2 className="text-2xl font-semibold text-[#3D2B1A] mb-4">What can you list?</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {SERVICE_TYPES.map((t) => (
+          {serviceTypes.map((t) => (
             <div
-              key={t.value}
+              key={t.slug}
               className="rounded-2xl border border-[#E8D9B8] bg-white p-4 text-center"
             >
               <div className="text-3xl mb-2">{t.icon}</div>
               <div className="text-sm font-semibold text-[#3D2B1A]">{t.label}</div>
-              <div className="text-xs text-gray-400 mt-1">{t.desc}</div>
+              <div className="text-xs text-gray-400 mt-1">{t.description}</div>
             </div>
           ))}
         </div>
@@ -821,6 +782,7 @@ const EMPTY_FORM = {
   pricing_type: "per_night",
   price_base: "",
   location: "",
+  country_code: "",
   amenities: "",
   images: "",
   host_avatar: "",
@@ -847,7 +809,7 @@ const EMPTY_FORM = {
   webhook_url: "",
 };
 
-function HostDashboard({ user, services, loading, onSubmit, onEdit, editingService, onCancelEdit }) {
+function HostDashboard({ user, services, loading, onSubmit, onEdit, editingService, onCancelEdit, serviceTypes, allCountries }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(editingService ? buildFormFromService(editingService) : { ...EMPTY_FORM });
   const [formErrors, setFormErrors] = useState({});
@@ -860,6 +822,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
       type: s.type || "accommodation",
       pricing_type: s.pricing_type || "per_night",
       price_base: s.price || "",
+      country_code: s.country_code || "",
       location: meta.location || s.location || "",
       amenities: (meta.amenities || []).join(", "),
       images: (meta.images || []).join(", "),
@@ -895,7 +858,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
     setFormErrors((e) => ({ ...e, [field]: false }));
   };
 
-  const selectedType = SERVICE_TYPES.find((t) => t.value === form.type) || SERVICE_TYPES[0];
+  const selectedType = serviceTypes.find((t) => t.slug === form.type) || serviceTypes[0] || { slug: form.type, label: form.type, icon: "📌", description: "", pricing_types: ["fixed"] };
 
   const sfc = (key) =>
     `w-full rounded-2xl border p-3 focus:outline-none transition-colors ${
@@ -910,7 +873,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
     ) : null;
 
   const tryNextServiceStep = () => {
-    const required = ["title", "description", "price_base", "location"];
+    const required = ["title", "description", "price_base", "location", "country_code"];
     if (form.type === "accommodation") required.push("rooms");
     if (form.type === "transport" || form.type === "car_rental") required.push("vehicle_type", "capacity");
     if (form.type === "flight") required.push("departure_city", "arrival_city");
@@ -971,12 +934,18 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
           <div className="space-y-4">
             <h3 className="font-semibold text-[#3D2B1A]">What type of service are you listing?</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {SERVICE_TYPES.map((t) => (
+              {serviceTypes.length === 0 ? (
+                <p className="col-span-3 text-sm text-gray-400 py-4">Loading service types…</p>
+              ) : serviceTypes.map((t) => (
                 <ServiceTypeCard
-                  key={t.value}
+                  key={t.slug}
                   type={t}
-                  selected={form.type === t.value}
-                  onClick={(v) => { set("type", v); set("pricing_type", SERVICE_TYPES.find(x => x.value === v).pricingTypes[0]); }}
+                  selected={form.type === t.slug}
+                  onClick={(slug) => {
+                    const found = serviceTypes.find(x => x.slug === slug);
+                    set("type", slug);
+                    set("pricing_type", found?.pricing_types?.[0] ?? "fixed");
+                  }}
                 />
               ))}
             </div>
@@ -1021,8 +990,8 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
                 <select value={form.pricing_type} onChange={(e) => set("pricing_type", e.target.value)}
                   className={sfc("pricing_type")}
                 >
-                  {selectedType.pricingTypes.map((pt) => (
-                    <option key={pt} value={pt}>{PRICING_LABELS[pt]}</option>
+                  {(selectedType.pricing_types ?? ["fixed"]).map((pt) => (
+                    <option key={pt} value={pt}>{PRICING_LABELS[pt] ?? pt}</option>
                   ))}
                 </select>
               </div>
@@ -1042,6 +1011,21 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
                 className={sfc("location")}
               />
               <SFE fieldKey="location" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Country <span className="text-red-500">*</span></label>
+              <select
+                value={form.country_code}
+                onChange={(e) => set("country_code", e.target.value)}
+                className={sfc("country_code")}
+              >
+                <option value="">Select a country…</option>
+                {allCountries.map((c) => (
+                  <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                ))}
+              </select>
+              <SFE fieldKey="country_code" />
+              <p className="text-xs text-gray-400 mt-1">The country where this service is based.</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Image URLs</label>
@@ -1281,8 +1265,9 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
               {[
                 { label: "Type", value: selectedType.label + " " + selectedType.icon },
                 { label: "Title", value: form.title },
+                { label: "Country", value: allCountries.find(c => c.code === form.country_code)?.name || form.country_code || "—" },
                 { label: "Location", value: form.location },
-                { label: "Price", value: form.price_base ? `KES ${Number(form.price_base).toLocaleString()} / ${PRICING_LABELS[form.pricing_type]}` : "—" },
+                { label: "Price", value: form.price_base ? `${Number(form.price_base).toLocaleString()} / ${PRICING_LABELS[form.pricing_type] ?? form.pricing_type}` : "—" },
                 { label: "External API", value: form.external_booking_url || "Not connected" },
               ].map((row) => (
                 <div key={row.label} className="flex justify-between px-4 py-3 text-sm">
@@ -1333,7 +1318,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
         <div className="space-y-3">
           {services.map((service) => {
             const badgeClass = APPROVAL_BADGE[service.approval_status] || "bg-gray-100 text-gray-500";
-            const typeInfo = SERVICE_TYPES.find((t) => t.value === service.type);
+            const typeInfo = serviceTypes.find((t) => t.slug === service.type);
             return (
               <div key={service.id} className="rounded-2xl border border-gray-100 p-4 hover:border-[#C4622D]/30 transition-colors">
                 <div className="flex items-start justify-between gap-2">
@@ -1349,7 +1334,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                  <span>KES {Number(service.price).toLocaleString()} / {PRICING_LABELS[service.pricing_type] || service.pricing_type}</span>
+                  <span>{Number(service.price).toLocaleString()} / {PRICING_LABELS[service.pricing_type] || service.pricing_type}</span>
                   <button
                     onClick={() => onEdit(service)}
                     className="text-[#C4622D] font-semibold hover:underline"
@@ -1370,9 +1355,16 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
 
 export default function Host() {
   const { user, setUser } = useContext(AppContext);
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [services, setServices]           = useState([]);
+  const [loading, setLoading]             = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [serviceTypes, setServiceTypes]   = useState([]);
+  const [allCountries, setAllCountries]   = useState([]);
+
+  useEffect(() => {
+    configService.getServiceTypes().then(setServiceTypes).catch(() => {});
+    countryService.getAll().then(setAllCountries).catch(() => {});
+  }, []);
 
   const loadServices = useCallback(async () => {
     if (!user || user.role !== "host") return;
@@ -1445,6 +1437,7 @@ export default function Host() {
       external_booking_url: form.external_booking_url || undefined,
       api_key: form.api_key || undefined,
       webhook_url: form.webhook_url || undefined,
+      country_code: form.country_code || undefined,
     };
 
     try {
@@ -1469,7 +1462,7 @@ export default function Host() {
   if (!user) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <GuestLanding />
+        <GuestLanding serviceTypes={serviceTypes} />
       </div>
     );
   }
@@ -1512,6 +1505,8 @@ export default function Host() {
             onEdit={setEditingService}
             editingService={editingService}
             onCancelEdit={() => setEditingService(null)}
+            serviceTypes={serviceTypes}
+            allCountries={allCountries}
           />
         </>
       )}

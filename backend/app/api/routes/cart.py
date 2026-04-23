@@ -53,8 +53,8 @@ def add_to_cart(data: CartItemAdd, user=Depends(get_current_user), db: Session =
     if not service:
         raise HTTPException(404, "Service not found or not available")
 
-    if data.check_out <= data.check_in:
-        raise HTTPException(400, "Check-out must be after check-in")
+    if data.check_out < data.check_in:
+        raise HTTPException(400, "Check-out must be on or after check-in")
 
     existing = db.query(CartItem).filter(
         CartItem.user_id == user.id,

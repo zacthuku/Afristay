@@ -1,11 +1,6 @@
 import { Link } from "react-router-dom";
-
-const STATS = [
-  { value: "12+", label: "Countries" },
-  { value: "3,400+", label: "Listings" },
-  { value: "50K+", label: "Travelers" },
-  { value: "1,200+", label: "Hosts" },
-];
+import { useState, useEffect } from "react";
+import { statsService } from "../services/api";
 
 const VALUES = [
   {
@@ -27,6 +22,21 @@ const VALUES = [
 ];
 
 export default function About() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    statsService.getPlatformStats().then(setStats).catch(() => {});
+  }, []);
+
+  const displayStats = stats
+    ? [
+        { value: stats.countries,  label: "Countries" },
+        { value: stats.listings,   label: "Listings" },
+        { value: stats.travelers,  label: "Travelers" },
+        { value: stats.hosts,      label: "Hosts" },
+      ]
+    : null;
+
   return (
     <div className="bg-[#FAF6EF] min-h-screen">
       {/* Hero */}
@@ -60,12 +70,17 @@ export default function About() {
       {/* Stats */}
       <section className="bg-white py-12">
         <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map((s) => (
-            <div key={s.label}>
-              <p className="text-4xl font-bold text-[#C4622D]">{s.value}</p>
-              <p className="text-gray-500 text-sm mt-1">{s.label}</p>
-            </div>
-          ))}
+          {displayStats
+            ? displayStats.map((s) => (
+                <div key={s.label}>
+                  <p className="text-4xl font-bold text-[#C4622D]">{Number(s.value).toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm mt-1">{s.label}</p>
+                </div>
+              ))
+            : [1,2,3,4].map(i => (
+                <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+              ))
+          }
         </div>
       </section>
 

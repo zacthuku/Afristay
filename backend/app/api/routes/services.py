@@ -33,6 +33,7 @@ def serialize_service(service: Service):
         "description": service.description,
         "type": service.type,
         "location": metadata.get("location", "Unknown"),
+        "country_code": service.country_code,
         "price": float(service.price_base or 0),
         "pricing_type": service.pricing_type,
         "approval_status": service.approval_status,
@@ -54,6 +55,7 @@ def get_services(
     q: Optional[str] = None,
     type: Optional[str] = None,
     location: Optional[str] = None,
+    countries: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     db: Session = Depends(get_db),
@@ -66,6 +68,10 @@ def get_services(
         query = query.filter(Service.price_base >= min_price)
     if max_price is not None:
         query = query.filter(Service.price_base <= max_price)
+    if countries:
+        codes = [c.strip().upper() for c in countries.split(",") if c.strip()]
+        if codes:
+            query = query.filter(Service.country_code.in_(codes))
     if q:
         term = f"%{q.lower()}%"
         query = query.filter(
@@ -102,6 +108,7 @@ def create_service(data: ServiceCreate, user=Depends(get_current_user), db: Sess
         price_base=data.price_base,
         pricing_type=data.pricing_type,
         approval_status="pending",
+        country_code=data.country_code.upper() if data.country_code else None,
         service_metadata={
             "location": data.location,
             "amenities": data.amenities,
@@ -151,6 +158,8 @@ def update_service(
         service.service_metadata["host_avatar"] = data.host_avatar
     if data.superhost is not None:
         service.service_metadata["superhost"] = data.superhost
+    if data.country_code is not None:
+        service.country_code = data.country_code.upper()
 
     db.commit()
     db.refresh(service)

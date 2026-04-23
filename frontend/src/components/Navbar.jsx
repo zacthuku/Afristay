@@ -3,32 +3,30 @@ import { Link, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import logo from "../assets/afristay svg.svg";
 
-// ─── static data ────────────────────────────────────────────────────
-const COUNTRIES = ["Kenya", "Uganda", "Tanzania", "Rwanda"];
-
-const ADVENTURES = [
-  { label: "Game Drives",      slug: "game-drives", icon: "🦁" },
-  { label: "Beach Activities", slug: "beach",        icon: "🏖️" },
-  { label: "Cultural Tours",   slug: "cultural",     icon: "🎭" },
-  { label: "Hiking & Nature",  slug: "hiking",       icon: "🏔️" },
-  { label: "Water Sports",     slug: "water-sports", icon: "🤿" },
+// ─── Static nav menu definitions ────────────────────────────────────────────
+const ADVENTURES_ITEMS = [
+  { label: "Game Drives",      href: "/search?type=adventure&q=game+drive" },
+  { label: "Beach Activities", href: "/search?type=adventure&q=beach" },
+  { label: "Cultural Tours",   href: "/search?type=attraction&q=cultural" },
+  { label: "Hiking & Nature",  href: "/search?type=adventure&q=hiking" },
+  { label: "Water Sports",     href: "/search?type=adventure&q=water+sports" },
 ];
 
-const STAYS = [
-  { label: "Hotels",       slug: "hotel",     icon: "🏨" },
-  { label: "Villas",       slug: "villa",     icon: "🏡" },
-  { label: "Apartments",   slug: "apartment", icon: "🏢" },
-  { label: "Penthouses",   slug: "penthouse", icon: "🌆" },
-  { label: "Unique Stays", slug: "unique",    icon: "🌳" },
+const STAYS_ITEMS = [
+  { label: "Hotels",       href: "/search?type=accommodation&q=hotel" },
+  { label: "Villas",       href: "/search?type=accommodation&q=villa" },
+  { label: "Apartments",   href: "/search?type=accommodation&q=apartment" },
+  { label: "Unique Stays", href: "/search?type=accommodation&q=lodge" },
+  { label: "Guesthouses",  href: "/search?type=accommodation&q=guesthouse" },
 ];
 
-const TRANSPORT = [
-  { label: "Flights",       slug: "flight",       icon: "✈️" },
-  { label: "Trains",        slug: "train",         icon: "🚂" },
-  { label: "Buses",         slug: "bus",           icon: "🚌" },
-  { label: "Car Hire",      slug: "car-hire",      icon: "🚗" },
-  { label: "Ride-hailing",  slug: "ride-hailing",  icon: "🚕" },
-  { label: "Boats/Ferries", slug: "ferry",         icon: "⛵" },
+const TRANSPORT_ITEMS = [
+  { label: "Flights",       href: "/search?type=transport&q=flight" },
+  { label: "Buses",         href: "/search?type=transport&q=bus" },
+  { label: "Car Hire",      href: "/search?type=transport&q=car" },
+  { label: "Ride-hailing",  href: "/search?type=transport&q=ride" },
+  { label: "Boats/Ferries", href: "/search?type=transport&q=boat" },
+  { label: "Shuttles",      href: "/search?type=transport&q=shuttle" },
 ];
 
 const MORE_LINKS = [
@@ -39,13 +37,13 @@ const MORE_LINKS = [
   { label: "Policies",       path: "/responsible-hosting" },
 ];
 
-// ─── helpers ────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 function getInitials(user) {
   if (!user) return "";
   return (user.name || user.email || "").charAt(0).toUpperCase();
 }
 
-// ─── inline SVG icons ───────────────────────────────────────────────
+// ─── SVG icons ──────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
   <svg
     className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
@@ -76,32 +74,52 @@ const StarIcon = () => (
   </svg>
 );
 
-// ─── dropdown panel ─────────────────────────────────────────────────
+// ─── Drop panel ─────────────────────────────────────────────────────────────
 function DropPanel({ children, className = "", style }) {
   return (
-    <div style={style} className={`absolute top-full bg-white shadow-xl rounded-2xl border border-[#E8D9B8] z-50 ${className}`}>
+    <div
+      style={style}
+      className={`absolute top-full bg-white shadow-xl rounded-2xl border border-[#E8D9B8] z-50 ${className}`}
+    >
       {children}
     </div>
   );
 }
 
-// ─── Navbar ─────────────────────────────────────────────────────────
+// ─── Mega menu column (desktop) ─────────────────────────────────────────────
+function MegaGrid({ items, onClose }) {
+  return (
+    <div className="flex flex-col">
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          to={item.href}
+          onClick={onClose}
+          className="block px-4 py-2.5 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors"
+        >
+          {item.label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// ─── Navbar ─────────────────────────────────────────────────────────────────
 export default function Navbar() {
   const location = useLocation();
-  const { user, logout, cartCount } = useContext(AppContext);
+  const {
+    user, logout, cartCount,
+    availableCountries,
+    selectedCountry, setSelectedCountry,
+  } = useContext(AppContext);
 
   const savedScrollY = useRef(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen]               = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
-  const [openMenu, setOpenMenu] = useState(null);
+  const [openMenu, setOpenMenu]           = useState(null);
 
-  const [country, setCountry] = useState(
-    () => localStorage.getItem("afristay_country") || "Kenya"
-  );
-
-  const handleCountryChange = (c) => {
-    setCountry(c);
-    localStorage.setItem("afristay_country", c);
+  const handleCountryChange = (countryObj) => {
+    setSelectedCountry(countryObj);
     setOpenMenu(null);
   };
 
@@ -134,8 +152,29 @@ export default function Navbar() {
   const toggleSection = (section) =>
     setExpandedSection((s) => (s === section ? null : section));
 
+  // ─── Desktop dropdown wrapper ──────────────────────────────────────────────
+  function DesktopMenu({ menuKey, label, path = "", children, minWidth = 480 }) {
+    return (
+      <div
+        className="relative"
+        onMouseEnter={() => setOpenMenu(menuKey)}
+        onMouseLeave={() => setOpenMenu(null)}
+      >
+        <button className={navLinkClass(path)}>
+          {label} <ChevronDown open={openMenu === menuKey} />
+        </button>
+        {openMenu === menuKey && (
+          <DropPanel className="left-0 p-4 mt-0.5" style={{ minWidth }}>
+            {children}
+          </DropPanel>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
+      {/* ─── Desktop nav bar ───────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 bg-[#FAF6EF] border-b border-[#E8D9B8] px-4 lg:px-8 flex items-center justify-between h-[68px]">
 
         {/* Logo */}
@@ -157,20 +196,28 @@ export default function Navbar() {
           >
             <button className={navLinkClass("")}>
               <GlobeIcon />
-              {country}
+              {selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : "🌍 Kenya"}
               <ChevronDown open={openMenu === "country"} />
             </button>
             {openMenu === "country" && (
-              <DropPanel className="left-0 w-40 py-1 mt-0.5">
-                {COUNTRIES.map((c) => (
+              <DropPanel className="left-0 w-44 py-1 mt-0.5">
+                <button
+                  onClick={() => handleCountryChange(null)}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-[#FAF6EF] ${
+                    !selectedCountry ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A]"
+                  }`}
+                >
+                  🌍 All Africa
+                </button>
+                {availableCountries.map((c) => (
                   <button
-                    key={c}
+                    key={c.code}
                     onClick={() => handleCountryChange(c)}
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-[#FAF6EF] ${
-                      c === country ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A]"
+                      selectedCountry?.code === c.code ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A]"
                     }`}
                   >
-                    {c}
+                    {c.flag} {c.name}
                   </button>
                 ))}
               </DropPanel>
@@ -185,102 +232,59 @@ export default function Navbar() {
             to="/plan"
             className="flex items-center gap-1.5 bg-[#C4622D] text-white px-4 py-1.5 rounded-full text-[13px] font-semibold hover:bg-[#a8521f] transition-colors mx-1 whitespace-nowrap"
           >
-            <StarIcon />
-            Plan Trip
+            <StarIcon /> Plan Trip
           </Link>
 
           {/* Adventures */}
-          <div
-            className="relative"
-            onMouseEnter={() => setOpenMenu("adventures")}
-            onMouseLeave={() => setOpenMenu(null)}
-          >
-            <button className={navLinkClass("/search?category=")}>
-              Adventures <ChevronDown open={openMenu === "adventures"} />
-            </button>
-            {openMenu === "adventures" && (
-              <DropPanel className="left-0 p-4 mt-0.5" style={{ minWidth: "480px" }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
-                  Experiences
-                </p>
-                <div className="grid grid-cols-5 gap-1">
-                  {ADVENTURES.map(({ label, slug, icon }) => (
-                    <Link
-                      key={slug}
-                      to={`/search?category=${slug}`}
-                      onClick={() => setOpenMenu(null)}
-                      className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-[#FAF6EF] transition-colors text-center"
-                    >
-                      <span className="text-2xl">{icon}</span>
-                      <span className="text-xs text-[#3D2B1A] font-medium leading-tight">{label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </DropPanel>
-            )}
-          </div>
+          <DesktopMenu menuKey="adventures" label="Adventures" path="/search?type=adventure" minWidth={380}>
+            <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
+              Experiences & Activities
+            </p>
+            <MegaGrid items={ADVENTURES_ITEMS} onClose={() => setOpenMenu(null)} />
+            <div className="mt-3 pt-3 border-t border-[#E8D9B8]">
+              <Link
+                to="/search?type=adventure"
+                onClick={() => setOpenMenu(null)}
+                className="block text-center text-xs text-[#C4622D] font-semibold hover:underline"
+              >
+                View all adventures →
+              </Link>
+            </div>
+          </DesktopMenu>
 
           {/* Stays */}
-          <div
-            className="relative"
-            onMouseEnter={() => setOpenMenu("stays")}
-            onMouseLeave={() => setOpenMenu(null)}
-          >
-            <button className={navLinkClass("/search?type=")}>
-              Stays <ChevronDown open={openMenu === "stays"} />
-            </button>
-            {openMenu === "stays" && (
-              <DropPanel className="left-0 p-4 mt-0.5" style={{ minWidth: "440px" }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
-                  Accommodation
-                </p>
-                <div className="grid grid-cols-5 gap-1">
-                  {STAYS.map(({ label, slug, icon }) => (
-                    <Link
-                      key={slug}
-                      to={`/search?type=${slug}`}
-                      onClick={() => setOpenMenu(null)}
-                      className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-[#FAF6EF] transition-colors text-center"
-                    >
-                      <span className="text-2xl">{icon}</span>
-                      <span className="text-xs text-[#3D2B1A] font-medium leading-tight">{label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </DropPanel>
-            )}
-          </div>
+          <DesktopMenu menuKey="stays" label="Stays" path="/search?type=accommodation" minWidth={340}>
+            <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
+              Accommodation
+            </p>
+            <MegaGrid items={STAYS_ITEMS} onClose={() => setOpenMenu(null)} />
+            <div className="mt-3 pt-3 border-t border-[#E8D9B8]">
+              <Link
+                to="/search?type=accommodation"
+                onClick={() => setOpenMenu(null)}
+                className="block text-center text-xs text-[#C4622D] font-semibold hover:underline"
+              >
+                View all stays →
+              </Link>
+            </div>
+          </DesktopMenu>
 
           {/* Transport */}
-          <div
-            className="relative"
-            onMouseEnter={() => setOpenMenu("transport")}
-            onMouseLeave={() => setOpenMenu(null)}
-          >
-            <button className={navLinkClass("/search?mode=transport")}>
-              Transport <ChevronDown open={openMenu === "transport"} />
-            </button>
-            {openMenu === "transport" && (
-              <DropPanel className="left-0 p-4 mt-0.5" style={{ minWidth: "480px" }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
-                  Getting Around
-                </p>
-                <div className="grid grid-cols-3 gap-1">
-                  {TRANSPORT.map(({ label, slug, icon }) => (
-                    <Link
-                      key={slug}
-                      to={`/search?mode=transport&type=${slug}`}
-                      onClick={() => setOpenMenu(null)}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-[#FAF6EF] transition-colors"
-                    >
-                      <span className="text-xl">{icon}</span>
-                      <span className="text-sm text-[#3D2B1A] font-medium">{label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </DropPanel>
-            )}
-          </div>
+          <DesktopMenu menuKey="transport" label="Transport" path="/search?type=transport" minWidth={360}>
+            <p className="text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold mb-3 px-1">
+              Getting Around
+            </p>
+            <MegaGrid items={TRANSPORT_ITEMS} onClose={() => setOpenMenu(null)} />
+            <div className="mt-3 pt-3 border-t border-[#E8D9B8]">
+              <Link
+                to="/search?type=transport"
+                onClick={() => setOpenMenu(null)}
+                className="block text-center text-xs text-[#C4622D] font-semibold hover:underline"
+              >
+                View all transport →
+              </Link>
+            </div>
+          </DesktopMenu>
 
           {/* More */}
           <div
@@ -308,7 +312,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right side */}
+        {/* Right side — cart + profile */}
         <div className="hidden md:flex items-center gap-2">
           {!user ? (
             <>
@@ -337,7 +341,7 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Profile dropdown — hover */}
+              {/* Profile dropdown */}
               <div
                 className="relative"
                 onMouseEnter={() => setOpenMenu("profile")}
@@ -355,20 +359,20 @@ export default function Navbar() {
                     </div>
 
                     {[
-                      { to: "/profile",  icon: "👤", label: "Profile" },
-                      { to: "/bookings", icon: "🗓️", label: "My Bookings" },
-                      { to: "/settings", icon: "⚙️", label: "Settings" },
-                    ].map(({ to, icon, label }) => (
+                      { to: "/profile",  label: "Profile" },
+                      { to: "/bookings", label: "My Bookings" },
+                      { to: "/settings", label: "Settings" },
+                    ].map(({ to, label }) => (
                       <Link key={to} to={to} onClick={() => setOpenMenu(null)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
-                        {icon} {label}
+                        className="block px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
+                        {label}
                       </Link>
                     ))}
 
                     {user.role === "host" && (
                       <Link to="/host/dashboard" onClick={() => setOpenMenu(null)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
-                        🏠 Host Dashboard
+                        className="block px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
+                        Host Dashboard
                       </Link>
                     )}
 
@@ -376,32 +380,25 @@ export default function Navbar() {
                       <>
                         <div className="px-4 pt-2 pb-0.5 text-[10px] uppercase tracking-widest text-[#5C4230] font-semibold">Admin</div>
                         {[
-                          { to: "/admin",           icon: "📊", label: "Dashboard" },
-                          { to: "/admin/users",      icon: "👥", label: "Manage Users" },
-                          { to: "/admin/approvals",  icon: "✅", label: "Approvals" },
-                          { to: "/admin/careers",    icon: "💼", label: "Manage Careers" },
-                        ].map(({ to, icon, label }) => (
+                          { to: "/admin",           label: "Dashboard" },
+                          { to: "/admin/users",     label: "Manage Users" },
+                          { to: "/admin/approvals", label: "Approvals" },
+                          { to: "/admin/careers",   label: "Manage Careers" },
+                        ].map(({ to, label }) => (
                           <Link key={to} to={to} onClick={() => setOpenMenu(null)}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
-                            {icon} {label}
+                            className="block px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
+                            {label}
                           </Link>
                         ))}
                       </>
                     )}
 
-                    {user.role === "user" && (
-                      <Link to="/dashboard" onClick={() => setOpenMenu(null)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#3D2B1A] hover:bg-[#FAF6EF] hover:text-[#C4622D] transition-colors">
-                        📊 My Dashboard
-                      </Link>
-                    )}
-
                     <div className="border-t border-[#E8D9B8] mt-1" />
                     <button
                       onClick={() => { logout(); setOpenMenu(null); }}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                      className="w-full text-left block px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                     >
-                      🚪 Logout
+                      Logout
                     </button>
                   </DropPanel>
                 )}
@@ -421,7 +418,7 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile menu */}
+      {/* ─── Mobile menu ───────────────────────────────────────────────────── */}
       {isOpen && (
         <div className="md:hidden bg-[#FAF6EF] border-b border-[#E8D9B8] px-4 pb-6 overflow-y-auto max-h-[calc(100vh-68px)]">
 
@@ -437,10 +434,10 @@ export default function Navbar() {
 
           {/* Accordion sections */}
           {[
-            { key: "adventures", label: "Adventures",  items: ADVENTURES, linkFn: (slug) => `/search?category=${slug}` },
-            { key: "stays",      label: "Stays",       items: STAYS,      linkFn: (slug) => `/search?type=${slug}` },
-            { key: "transport",  label: "Transport",   items: TRANSPORT,  linkFn: (slug) => `/search?mode=transport&type=${slug}` },
-          ].map(({ key, label, items, linkFn }) => (
+            { key: "adventures", label: "Adventures", items: ADVENTURES_ITEMS },
+            { key: "stays",      label: "Stays",      items: STAYS_ITEMS },
+            { key: "transport",  label: "Transport",  items: TRANSPORT_ITEMS },
+          ].map(({ key, label, items }) => (
             <div key={key} className="border-b border-[#E8D9B8]">
               <button
                 onClick={() => toggleSection(key)}
@@ -450,11 +447,15 @@ export default function Navbar() {
                 <ChevronDown open={expandedSection === key} />
               </button>
               {expandedSection === key && (
-                <div className="pb-2 grid grid-cols-2 gap-1">
-                  {items.map(({ label: lbl, slug, icon }) => (
-                    <Link key={slug} to={linkFn(slug)} onClick={navigateFromMenu}
-                      className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-[#E8D9B8] text-sm text-[#3D2B1A]">
-                      <span>{icon}</span>{lbl}
+                <div className="pb-2 flex flex-col">
+                  {items.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={navigateFromMenu}
+                      className="block px-3 py-2.5 text-sm text-[#3D2B1A] hover:bg-[#E8D9B8] rounded-lg"
+                    >
+                      {item.label}
                     </Link>
                   ))}
                 </div>
@@ -463,32 +464,48 @@ export default function Navbar() {
           ))}
 
           {/* Country selector */}
-          <div className="border-b border-[#E8D9B8]">
-            <button
-              onClick={() => toggleSection("country")}
-              className="w-full flex items-center justify-between py-3 text-[14px] font-medium text-[#5C4230]"
-            >
-              <span className="flex items-center gap-2"><GlobeIcon />{country}</span>
-              <ChevronDown open={expandedSection === "country"} />
-            </button>
-            {expandedSection === "country" && (
-              <div className="pb-2">
-                {COUNTRIES.map((c) => (
-                  <button key={c} onClick={() => { handleCountryChange(c); setExpandedSection(null); }}
+          {availableCountries.length > 0 && (
+            <div className="border-b border-[#E8D9B8]">
+              <button
+                onClick={() => toggleSection("country")}
+                className="w-full flex items-center justify-between py-3 text-[14px] font-medium text-[#5C4230]"
+              >
+                <span className="flex items-center gap-2">
+                  <GlobeIcon />
+                  {selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : "🌍 All Africa"}
+                </span>
+                <ChevronDown open={expandedSection === "country"} />
+              </button>
+              {expandedSection === "country" && (
+                <div className="pb-2">
+                  <button
+                    onClick={() => { handleCountryChange(null); setExpandedSection(null); }}
                     className={`w-full text-left px-3 py-2 text-sm rounded-lg ${
-                      c === country ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A] hover:bg-[#E8D9B8]"
-                    }`}>
-                    {c}
+                      !selectedCountry ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A] hover:bg-[#E8D9B8]"
+                    }`}
+                  >
+                    🌍 All Africa
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
+                  {availableCountries.map((c) => (
+                    <button
+                      key={c.code}
+                      onClick={() => { handleCountryChange(c); setExpandedSection(null); }}
+                      className={`w-full text-left px-3 py-2 text-sm rounded-lg ${
+                        selectedCountry?.code === c.code ? "text-[#C4622D] font-semibold" : "text-[#3D2B1A] hover:bg-[#E8D9B8]"
+                      }`}
+                    >
+                      {c.flag} {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Cart link */}
           <Link to="/cart" onClick={navigateFromMenu}
             className="flex items-center justify-between py-3 border-b border-[#E8D9B8] text-[14px] font-medium text-[#5C4230] hover:text-[#C4622D]">
-            <span className="flex items-center gap-2"><CartIcon />Cart</span>
+            <span className="flex items-center gap-2"><CartIcon /> Cart</span>
             {cartCount > 0 && (
               <span className="bg-[#C4622D] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                 {cartCount > 9 ? "9+" : cartCount}
@@ -496,7 +513,7 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Auth */}
+          {/* Auth section */}
           <div className="pt-4 space-y-2">
             {!user ? (
               <>
@@ -522,40 +539,34 @@ export default function Navbar() {
                 </div>
 
                 {[
-                  { to: "/profile",  icon: "👤", label: "Profile" },
-                  { to: "/bookings", icon: "🗓️", label: "My Bookings" },
-                  { to: "/settings", icon: "⚙️", label: "Settings" },
-                ].map(({ to, icon, label }) => (
+                  { to: "/profile",  label: "Profile" },
+                  { to: "/bookings", label: "My Bookings" },
+                  { to: "/settings", label: "Settings" },
+                ].map(({ to, label }) => (
                   <Link key={to} to={to} onClick={navigateFromMenu}
-                    className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
-                    {icon} {label}
+                    className="block py-2 text-[14px] text-[#5C4230] hover:text-[#C4622D]">
+                    {label}
                   </Link>
                 ))}
 
                 {user.role === "host" && (
                   <Link to="/host/dashboard" onClick={navigateFromMenu}
-                    className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
-                    🏠 Host Dashboard
+                    className="block py-2 text-[14px] text-[#5C4230] hover:text-[#C4622D]">
+                    Host Dashboard
                   </Link>
                 )}
 
                 {user.role === "admin" && (
                   <>
-                    <Link to="/admin" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">📊 Admin Dashboard</Link>
-                    <Link to="/admin/users" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">👥 Manage Users</Link>
-                    <Link to="/admin/approvals" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">✅ Approvals</Link>
+                    <Link to="/admin" onClick={navigateFromMenu} className="block py-2 text-[14px] text-[#5C4230] hover:text-[#C4622D]">Admin Dashboard</Link>
+                    <Link to="/admin/users" onClick={navigateFromMenu} className="block py-2 text-[14px] text-[#5C4230] hover:text-[#C4622D]">Manage Users</Link>
+                    <Link to="/admin/approvals" onClick={navigateFromMenu} className="block py-2 text-[14px] text-[#5C4230] hover:text-[#C4622D]">Approvals</Link>
                   </>
                 )}
 
-                {user.role === "user" && (
-                  <Link to="/dashboard" onClick={navigateFromMenu} className="flex items-center gap-2 py-2 text-[14px] text-[#5C4230]">
-                    📊 My Dashboard
-                  </Link>
-                )}
-
                 <button onClick={() => { logout(); navigateFromMenu(); }}
-                  className="flex items-center gap-2 py-2 text-[14px] text-red-500">
-                  🚪 Logout
+                  className="block py-2 text-[14px] text-red-500 text-left">
+                  Logout
                 </button>
               </>
             )}

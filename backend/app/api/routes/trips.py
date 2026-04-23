@@ -11,7 +11,7 @@ import httpx
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
-from app.models.all_models import Service, Trip, TripSegment, ActivityBooking
+from app.models.all_models import Service, Trip, TripSegment, ActivityBooking, CartItem, Booking
 from app.schemas.trip import TripGenerateRequest, TripSaveRequest
 from app.services.daraja_service import daraja_service
 

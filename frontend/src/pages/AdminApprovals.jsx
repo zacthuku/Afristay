@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { hostService, userService } from "../services/api";
+import { hostService, userService, configService } from "../services/api";
 
 const TABS = ["services", "hosts"];
 
-const REJECTION_OPTIONS = [
+const FALLBACK_REJECTION_OPTIONS = [
   "Invalid contact details",
   "Insufficient documentation",
   "Suspicious or unverifiable service",
@@ -20,9 +20,10 @@ function formatDate(dateStr) {
 
 // ─── Rejection modal ─────────────────────────────────────────────────────────
 
-function RejectModal({ title, onConfirm, onClose }) {
+function RejectModal({ title, onConfirm, onClose, rejectionOptions }) {
   const [selected, setSelected] = useState("");
   const [custom, setCustom] = useState("");
+  const options = rejectionOptions.length > 0 ? rejectionOptions : FALLBACK_REJECTION_OPTIONS;
 
   const reason = selected === "Other" ? custom : selected;
   const canSubmit = selected && (selected !== "Other" || custom.trim());
@@ -35,26 +36,29 @@ function RejectModal({ title, onConfirm, onClose }) {
           Select a reason — this will be sent to the applicant in a notification email.
         </p>
         <div className="space-y-2 mb-4">
-          {REJECTION_OPTIONS.map((opt) => (
-            <label
-              key={opt}
-              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                selected === opt
-                  ? "border-red-300 bg-red-50"
-                  : "border-gray-100 hover:border-gray-200"
-              }`}
-            >
-              <input
-                type="radio"
-                name="rejection_reason"
-                value={opt}
-                checked={selected === opt}
-                onChange={() => setSelected(opt)}
-                className="accent-red-500"
-              />
-              <span className="text-sm text-[#3D2B1A]">{opt}</span>
-            </label>
-          ))}
+          {options.map((opt) => {
+            const label = typeof opt === "string" ? opt : opt.text;
+            return (
+              <label
+                key={label}
+                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                  selected === label
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-100 hover:border-gray-200"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="rejection_reason"
+                  value={label}
+                  checked={selected === label}
+                  onChange={() => setSelected(label)}
+                  className="accent-red-500"
+                />
+                <span className="text-sm text-[#3D2B1A]">{label}</span>
+              </label>
+            );
+          })}
         </div>
         {selected === "Other" && (
           <textarea
@@ -165,12 +169,14 @@ export default function AdminApprovals() {
   const [pendingServices, setPendingServices] = useState([]);
   const [pendingHosts, setPendingHosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rejectionOptions, setRejectionOptions] = useState([]);
 
   const [rejectModal, setRejectModal] = useState(null); // { type: "service"|"host", id, title }
   const [detailModal, setDetailModal] = useState(null); // host object
 
   useEffect(() => {
     loadData();
+    configService.getRejectionReasons().then(setRejectionOptions).catch(() => {});
   }, []);
 
   async function loadData() {
@@ -245,6 +251,7 @@ export default function AdminApprovals() {
         <RejectModal
           title={rejectModal.title}
           onClose={() => setRejectModal(null)}
+          rejectionOptions={rejectionOptions}
           onConfirm={(reason) => {
             if (rejectModal.type === "service") handleRejectService(rejectModal.id, reason);
             else handleRejectHost(rejectModal.id, reason);

@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { authService } from "../services/api";
+import { validateEmail } from "../utils/validate";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -14,11 +15,12 @@ export default function ForgotPassword() {
   const bgImage = listings[1]?.images?.[0] || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e";
 
   const handleReset = async () => {
-    if (!email.trim()) {
-      setEmailError(true);
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setEmailError(emailErr);
       return;
     }
-    setEmailError(false);
+    setEmailError(null);
     setError("");
     setLoading(true);
     try {
@@ -74,10 +76,10 @@ export default function ForgotPassword() {
                 placeholder="Enter your email"
                 className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4622D] ${emailError ? "border-red-400 bg-red-50" : ""}`}
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setEmailError(false); setError(""); }}
+                onChange={(e) => { setEmail(e.target.value); setEmailError(null); setError(""); }}
                 disabled={loading}
               />
-              {emailError && <p className="text-red-500 text-xs mt-1">Email is required.</p>}
+              {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
             </div>
 
             <button

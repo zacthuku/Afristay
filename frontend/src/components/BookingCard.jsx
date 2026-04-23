@@ -9,7 +9,7 @@ const BRAND = "#C4622D";
 // Supported steps: "dates" | "payment" | "polling" | "confirmed" | "failed"
 
 export function BookingCard({ listing }) {
-  const { user } = useContext(AppContext);
+  const { user, currency, paymentMethods } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,16 +18,24 @@ export function BookingCard({ listing }) {
   const [checkOut, setCheckOut] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
   const [phone, setPhone] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [cardName, setCardName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
+  const [bookingId, setBookingId] = useState(null);
+
   const pollRef = useRef(null);
   const timeoutRef = useRef(null);
+
+  // Reset to first available method when country changes
+  useEffect(() => {
+    const first = paymentMethods.find(m => m.available);
+    if (first && !paymentMethods.find(m => m.id === paymentMethod && m.available)) {
+      setPaymentMethod(first.id);
+    }
+  }, [paymentMethods]);
+
+  const activeMethod = paymentMethods.find(m => m.id === paymentMethod);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -96,11 +104,6 @@ export function BookingCard({ listing }) {
     const fe = {};
     if (paymentMethod === "mpesa" || paymentMethod === "airtel") {
       if (!phone.trim()) fe.phone = true;
-    } else {
-      if (!cardNumber.trim()) fe.cardNumber = true;
-      if (!cardExpiry.trim()) fe.cardExpiry = true;
-      if (!cardCvv.trim()) fe.cardCvv = true;
-      if (!cardName.trim()) fe.cardName = true;
     }
     if (Object.keys(fe).length > 0) { setFieldErrors(fe); return; }
     setFieldErrors({});
@@ -115,6 +118,7 @@ export function BookingCard({ listing }) {
         quantity: 1,
       });
       const newBookingId = bookingData.id;
+      setBookingId(newBookingId);
 
       if (paymentMethod === "mpesa") {
         const paymentData = await paymentService.initiateMpesa({
@@ -131,15 +135,9 @@ export function BookingCard({ listing }) {
         setStep("polling");
         startPolling(paymentData.checkout_request_id);
       } else {
-        const paymentData = await paymentService.initiateCard({
-          booking_id: newBookingId,
-          card_number: cardNumber.replace(/\s/g, ""),
-          card_expiry: cardExpiry,
-          card_cvv: cardCvv,
-          card_name: cardName,
-        });
-        setStep("polling");
-        startPolling(paymentData.checkout_request_id);
+        // Card: Flutterwave hosted checkout — redirect to their secure payment page
+        const paymentData = await paymentService.initiateCard(newBookingId);
+        window.location.href = paymentData.payment_link;
       }
     } catch (err) {
       setError(err.message || "Payment initiation failed. Please try again.");
@@ -156,6 +154,7 @@ export function BookingCard({ listing }) {
         if (result.status === "completed") {
           clearInterval(pollRef.current);
           clearTimeout(timeoutRef.current);
+          setBookingId(null);
           setStep("confirmed");
           toast.success("Booking confirmed! Check your email for details.");
           setTimeout(() => navigate("/bookings"), 3000);
@@ -177,9 +176,17 @@ export function BookingCard({ listing }) {
     }, 120000);
   }
 
-  function handleCancel() {
+  async function handleCancel() {
     if (pollRef.current) clearInterval(pollRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (bookingId) {
+      try {
+        await bookingService.cancelBooking(bookingId);
+      } catch (err) {
+        console.error("Failed to cancel booking:", err);
+      }
+    }
+    setBookingId(null);
     setStep("dates");
     setError("");
   }
@@ -192,7 +199,7 @@ export function BookingCard({ listing }) {
         <>
           <div className="flex items-baseline justify-between mb-5">
             <span className="text-2xl font-bold text-[#3D2B1A]">
-              KES {price.toLocaleString()}
+              {currency.symbol} {price.toLocaleString()}
             </span>
             <span className="text-gray-500 text-sm">/ night</span>
           </div>
@@ -229,12 +236,12 @@ export function BookingCard({ listing }) {
           {nights > 0 && (
             <div className="text-sm text-gray-600 bg-[#FAF6EF] rounded-lg p-3 mb-3">
               <div className="flex justify-between">
-                <span>KES {price.toLocaleString()} × {nights} night{nights > 1 ? "s" : ""}</span>
-                <span>KES {total.toLocaleString()}</span>
+                <span>{currency.symbol} {price.toLocaleString()} × {nights} night{nights > 1 ? "s" : ""}</span>
+                <span>{currency.symbol} {total.toLocaleString()}</span>
               </div>
               <div className="flex justify-between font-semibold text-[#3D2B1A] mt-2 pt-2 border-t border-[#E8D9B8]">
                 <span>Total</span>
-                <span>KES {total.toLocaleString()}</span>
+                <span>{currency.symbol} {total.toLocaleString()}</span>
               </div>
             </div>
           )}
@@ -269,17 +276,16 @@ export function BookingCard({ listing }) {
           <h3 className="text-lg font-semibold text-[#3D2B1A] mb-3">Choose payment method</h3>
 
           {/* Payment method selector */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { id: "mpesa",  label: "M-Pesa",       color: "#00A650" },
-              { id: "airtel", label: "Airtel Money",  color: "#E40000" },
-              { id: "card",   label: "Visa / Card",   color: "#1A1F71" },
-            ].map((m) => (
+          <div className={`grid gap-2 mb-4 ${paymentMethods.length <= 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+            {paymentMethods.map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setPaymentMethod(m.id); setError(""); setFieldErrors({}); }}
-                className={`rounded-xl p-2 text-xs font-semibold border-2 transition-all ${
-                  paymentMethod === m.id
+                disabled={!m.available}
+                onClick={() => { if (!m.available) return; setPaymentMethod(m.id); setError(""); setFieldErrors({}); }}
+                className={`rounded-xl p-2 text-xs font-semibold border-2 transition-all relative ${
+                  !m.available
+                    ? "border-gray-200 text-gray-300 cursor-not-allowed opacity-60"
+                    : paymentMethod === m.id
                     ? "border-[#C4622D] bg-[#FAF6EF] text-[#3D2B1A]"
                     : "border-[#E8D9B8] text-gray-500 hover:border-[#C4622D]/40"
                 }`}
@@ -288,12 +294,22 @@ export function BookingCard({ listing }) {
                   className="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center text-white font-bold"
                   style={{ backgroundColor: m.color, fontSize: 9 }}
                 >
-                  {m.id === "mpesa" ? "M" : m.id === "airtel" ? "A" : "V"}
+                  {m.id[0].toUpperCase()}
                 </div>
                 {m.label}
+                {m.comingSoon && (
+                  <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-amber-400 text-white px-1 rounded-full font-bold leading-tight">
+                    Soon
+                  </span>
+                )}
               </button>
             ))}
           </div>
+          {paymentMethods.some(m => m.comingSoon) && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
+              Some payment methods are coming soon — use Airtel Money or Card to pay now.
+            </p>
+          )}
 
           <div className="bg-[#FAF6EF] rounded-lg p-3 mb-4 text-sm">
             <div className="flex justify-between text-gray-600">
@@ -302,7 +318,7 @@ export function BookingCard({ listing }) {
             </div>
             <div className="flex justify-between font-bold text-[#3D2B1A] mt-1">
               <span>Total</span>
-              <span>KES {total.toLocaleString()}</span>
+              <span>{currency.symbol} {total.toLocaleString()}</span>
             </div>
           </div>
 
@@ -310,90 +326,27 @@ export function BookingCard({ listing }) {
           {(paymentMethod === "mpesa" || paymentMethod === "airtel") && (
             <>
               <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-                {paymentMethod === "mpesa" ? "M-Pesa" : "Airtel"} Phone Number <span className="text-red-500">*</span>
+                {activeMethod?.label ?? "Mobile Money"} Phone Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
-                placeholder={paymentMethod === "mpesa" ? "e.g. 0712345678" : "e.g. 0733123456"}
+                placeholder="e.g. 0712345678"
                 value={phone}
                 onChange={(e) => { setPhone(e.target.value); setError(""); setFieldErrors((p) => ({ ...p, phone: false })); }}
                 className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.phone ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
               />
               {fieldErrors.phone && <p className="text-red-500 text-xs mt-1 mb-2">Phone number is required.</p>}
               <p className="text-xs text-gray-400 mt-1 mb-3">
-                {paymentMethod === "mpesa"
-                  ? "You'll receive a Safaricom STK prompt — enter your M-Pesa PIN."
-                  : "You'll receive an Airtel Money prompt — enter your PIN to confirm."}
+                You'll receive a {activeMethod?.label ?? "mobile money"} prompt — enter your PIN to confirm.
               </p>
             </>
           )}
 
-          {/* Card fields */}
+          {/* Card — Flutterwave hosted checkout */}
           {paymentMethod === "card" && (
-            <>
-              <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-                Name on card <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Jane Wanjiku"
-                value={cardName}
-                onChange={(e) => { setCardName(e.target.value); setError(""); setFieldErrors((p) => ({ ...p, cardName: false })); }}
-                className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] mb-2 ${fieldErrors.cardName ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
-              />
-              <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-                Card number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={19}
-                placeholder="1234 5678 9012 3456"
-                value={cardNumber}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim();
-                  setCardNumber(v);
-                  setError("");
-                  setFieldErrors((p) => ({ ...p, cardNumber: false }));
-                }}
-                className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] mb-2 ${fieldErrors.cardNumber ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
-              />
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-                    Expiry <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="MM/YY"
-                    maxLength={5}
-                    value={cardExpiry}
-                    onChange={(e) => {
-                      let v = e.target.value.replace(/\D/g, "");
-                      if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2, 4);
-                      setCardExpiry(v);
-                      setError("");
-                      setFieldErrors((p) => ({ ...p, cardExpiry: false }));
-                    }}
-                    className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.cardExpiry ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#3D2B1A] mb-1 uppercase tracking-wide">
-                    CVV <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="•••"
-                    maxLength={4}
-                    value={cardCvv}
-                    onChange={(e) => { setCardCvv(e.target.value.replace(/\D/g, "")); setError(""); setFieldErrors((p) => ({ ...p, cardCvv: false })); }}
-                    className={`w-full border p-3 rounded-lg text-sm focus:outline-none focus:border-[#C4622D] ${fieldErrors.cardCvv ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 mb-3">🔒 Secured with 256-bit SSL encryption.</p>
-            </>
+            <div className="bg-[#FAF6EF] border border-[#E8D9B8] rounded-lg p-3 mb-3 text-sm text-[#5C4230]">
+              You will be redirected to Flutterwave's secure checkout page to enter your card details.
+            </div>
           )}
 
           {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
@@ -406,9 +359,7 @@ export function BookingCard({ listing }) {
           >
             {loading
               ? "Processing..."
-              : `Pay KES ${total.toLocaleString()} via ${
-                  paymentMethod === "mpesa" ? "M-Pesa" : paymentMethod === "airtel" ? "Airtel Money" : "Card"
-                }`}
+              : `Pay ${currency.symbol} ${total.toLocaleString()} via ${activeMethod?.label ?? "Card"}`}
           </button>
         </>
       )}
@@ -421,16 +372,14 @@ export function BookingCard({ listing }) {
             A payment prompt has been sent to <strong>{phone || "your card"}</strong>.
           </p>
           <p className="text-sm text-gray-500 mb-5">
-            {paymentMethod === "mpesa"
-              ? "Enter your M-Pesa PIN to complete the payment."
-              : paymentMethod === "airtel"
-              ? "Enter your Airtel Money PIN to complete the payment."
-              : "Authorising your card payment..."}
+            {paymentMethod === "card"
+              ? "Authorising your card payment..."
+              : `Enter your ${activeMethod?.label ?? "mobile money"} PIN to complete the payment.`}
           </p>
           <div className="bg-[#FAF6EF] rounded-lg p-3 mb-5 text-sm">
             <div className="flex justify-between font-bold text-[#3D2B1A]">
               <span>Amount</span>
-              <span>KES {total.toLocaleString()}</span>
+              <span>{currency.symbol} {total.toLocaleString()}</span>
             </div>
           </div>
           <button

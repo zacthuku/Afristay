@@ -168,4 +168,4 @@ def downgrade() -> None:
     op.execute('DROP INDEX IF EXISTS idx_services_location')
     op.drop_table('services')
     op.drop_table('users')
-    op.execute("DROP EXTENSION IF EXISTS postgis")  # ← added last
+    # PostGIS extension is shared; skip DROP to avoid privilege errors

@@ -3,7 +3,7 @@ import string
 from typing import Optional
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
 
@@ -21,9 +21,20 @@ class RejectBody(BaseModel):
 
 class AdminOnboardHostBody(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: Optional[str] = None
     phone: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if len(v) > 254:
+            raise ValueError("Email address too long (max 254 characters)")
+        local = v.split("@")[0]
+        if len(local) > 64:
+            raise ValueError("Email local part too long (max 64 characters)")
+        return v
 
 
 def _generate_otp(length: int = 12) -> str:
@@ -35,8 +46,21 @@ class HostApplicationBody(BaseModel):
     company_name: str
     business_type: str
     business_description: str
-    business_email: Optional[str] = None
+    business_email: Optional[EmailStr] = None
     phone: Optional[str] = None
+
+    @field_validator("business_email", mode="before")
+    @classmethod
+    def normalize_business_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip().lower()
+        if len(v) > 254:
+            raise ValueError("Email address too long (max 254 characters)")
+        local = v.split("@")[0]
+        if len(local) > 64:
+            raise ValueError("Email local part too long (max 64 characters)")
+        return v
     location: str
     services_offered: str
     operating_areas: Optional[str] = None

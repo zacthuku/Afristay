@@ -9,6 +9,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from app.api.routes import auth, users, services, bookings, payments, reviews, jobs, cart, trips
+from app.api.routes.countries import router as countries_router
+from app.api.routes.config import router as config_router
+from app.api.routes.stats import router as stats_router
 
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
@@ -58,6 +61,9 @@ app.include_router(reviews.router)
 app.include_router(jobs.router)
 app.include_router(cart.router)
 app.include_router(trips.router)
+app.include_router(countries_router, prefix="/api/v1")
+app.include_router(config_router, prefix="/api/v1")
+app.include_router(stats_router, prefix="/api/v1")
 
 
 @app.get("/")

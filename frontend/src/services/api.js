@@ -317,3 +317,42 @@ export const jobService = {
   update: (id, data) => apiCall(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => apiCall(`/jobs/${id}`, { method: "DELETE" }),
 };
+
+// Country Service
+export const countryService = {
+  getAll:    () => apiCall("/api/v1/countries"),
+  getActive: () => apiCall("/api/v1/countries/active"),
+  getCities: (code) => apiCall(`/api/v1/countries/${code}/cities`),
+  create:    (data) => apiCall("/api/v1/countries", { method: "POST", body: JSON.stringify(data) }),
+  update:    (code, data) => apiCall(`/api/v1/countries/${code}`, { method: "PUT", body: JSON.stringify(data) }),
+  deactivate:(code) => apiCall(`/api/v1/countries/${code}`, { method: "DELETE" }),
+};
+
+// Config Service (categories, destinations, service types, rejection reasons)
+export const configService = {
+  getCategories:       () => apiCall("/api/v1/config/categories"),
+  getDestinations:     () => apiCall("/api/v1/config/destinations"),
+  getServiceTypes:     () => apiCall("/api/v1/config/service-types"),
+  getRejectionReasons: () => apiCall("/api/v1/config/rejection-reasons"),
+
+  createCategory:    (d) => apiCall("/api/v1/config/categories",        { method: "POST",   body: JSON.stringify(d) }),
+  updateCategory:    (id, d) => apiCall(`/api/v1/config/categories/${id}`,    { method: "PUT",    body: JSON.stringify(d) }),
+  deleteCategory:    (id) => apiCall(`/api/v1/config/categories/${id}`,    { method: "DELETE" }),
+
+  createDestination: (d) => apiCall("/api/v1/config/destinations",       { method: "POST",   body: JSON.stringify(d) }),
+  updateDestination: (id, d) => apiCall(`/api/v1/config/destinations/${id}`,   { method: "PUT",    body: JSON.stringify(d) }),
+  deleteDestination: (id) => apiCall(`/api/v1/config/destinations/${id}`,   { method: "DELETE" }),
+
+  createServiceType: (d) => apiCall("/api/v1/config/service-types",      { method: "POST",   body: JSON.stringify(d) }),
+  updateServiceType: (id, d) => apiCall(`/api/v1/config/service-types/${id}`,  { method: "PUT",    body: JSON.stringify(d) }),
+  deleteServiceType: (id) => apiCall(`/api/v1/config/service-types/${id}`,  { method: "DELETE" }),
+
+  createRejectionReason: (d) => apiCall("/api/v1/config/rejection-reasons",  { method: "POST",   body: JSON.stringify(d) }),
+  updateRejectionReason: (id, d) => apiCall(`/api/v1/config/rejection-reasons/${id}`, { method: "PUT", body: JSON.stringify(d) }),
+  deleteRejectionReason: (id) => apiCall(`/api/v1/config/rejection-reasons/${id}`, { method: "DELETE" }),
+};
+
+// Stats Service
+export const statsService = {
+  getPlatformStats: () => apiCall("/api/v1/stats"),
+};

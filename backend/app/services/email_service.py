@@ -1,3 +1,4 @@
+import html
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -41,13 +42,14 @@ class EmailService:
     def send_password_reset_email(email: str, reset_token: str, frontend_url: str = "") -> bool:
         base = (frontend_url or settings.FRONTEND_URL).rstrip("/")
         reset_url = f"{base}/reset-password?token={reset_token}"
+        safe_email = html.escape(email or "")
         subject = "Reset your AfriStay password"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;background:#f9f9f9;padding:20px;">
             <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
               <h2 style="color:#C4622D;margin-top:0;">Password Reset Request</h2>
-              <p>We received a request to reset the password for your AfriStay account associated with <strong>{email}</strong>.</p>
+              <p>We received a request to reset the password for your AfriStay account associated with <strong>{safe_email}</strong>.</p>
               <p>Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
               <div style="text-align:center;margin:32px 0;">
                 <a href="{reset_url}"
@@ -75,12 +77,13 @@ class EmailService:
 
     @staticmethod
     def send_welcome_email(name: str, email: str) -> bool:
+        safe_name = html.escape(name or "")
         subject = "Welcome to AfriStay!"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
-              <h2 style="color:#C4622D;">Welcome to AfriStay, {name}!</h2>
+              <h2 style="color:#C4622D;">Welcome to AfriStay, {safe_name}!</h2>
               <p>Thank you for registering. We're excited to have you on board!</p>
               <ul>
                 <li>Browse and book amazing accommodations and transport services</li>
@@ -98,18 +101,22 @@ class EmailService:
 
     @staticmethod
     def send_booking_confirmation(user_name: str, email: str, service_title: str, start_time: str, end_time: str, total_price: float) -> bool:
+        safe_name = html.escape(user_name or "")
+        safe_title = html.escape(service_title or "")
+        safe_start = html.escape(str(start_time))
+        safe_end = html.escape(str(end_time))
         subject = f"Booking Confirmed - {service_title}"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
               <h2 style="color:#C4622D;">Booking Confirmed!</h2>
-              <p>Hi {user_name},</p>
+              <p>Hi {safe_name},</p>
               <p>Your booking has been confirmed. Here are the details:</p>
               <div style="background:#f5f5f5;padding:15px;border-radius:5px;margin:20px 0;">
-                <p><strong>Service:</strong> {service_title}</p>
-                <p><strong>Check-in:</strong> {start_time}</p>
-                <p><strong>Check-out:</strong> {end_time}</p>
+                <p><strong>Service:</strong> {safe_title}</p>
+                <p><strong>Check-in:</strong> {safe_start}</p>
+                <p><strong>Check-out:</strong> {safe_end}</p>
                 <p><strong>Total:</strong> KES {total_price:,.2f}</p>
               </div>
               <p style="margin-top:30px;color:#666;font-size:12px;">
@@ -123,12 +130,13 @@ class EmailService:
 
     @staticmethod
     def send_host_approval_email(host_name: str, email: str) -> bool:
+        safe_name = html.escape(host_name or "")
         subject = "Your Host Application Has Been Approved!"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
-              <h2 style="color:#C4622D;">Congratulations, {host_name}!</h2>
+              <h2 style="color:#C4622D;">Congratulations, {safe_name}!</h2>
               <p>Your host application has been approved. You can now create listings and accept bookings.</p>
               <p style="margin-top:30px;color:#666;font-size:12px;">Best regards,<br>The AfriStay Team</p>
             </div>
@@ -139,10 +147,12 @@ class EmailService:
 
     @staticmethod
     def send_host_rejection_email(host_name: str, email: str, reason: str = "") -> bool:
+        safe_name = html.escape(host_name or "")
+        safe_reason = html.escape(reason or "")
         subject = "Update on Your AfriStay Host Application"
         reason_block = f"""
             <div style="background:#fff5f5;border-left:4px solid #e53e3e;padding:12px 16px;margin:16px 0;border-radius:4px;">
-                <p style="margin:0;color:#c53030;font-size:14px;"><strong>Reason:</strong> {reason}</p>
+                <p style="margin:0;color:#c53030;font-size:14px;"><strong>Reason:</strong> {safe_reason}</p>
             </div>
         """ if reason else ""
         html_content = f"""
@@ -150,7 +160,7 @@ class EmailService:
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
               <h2 style="color:#C4622D;">Host Application — Not Approved</h2>
-              <p>Hi {host_name},</p>
+              <p>Hi {safe_name},</p>
               <p>After reviewing your application, we are unable to approve it at this time.</p>
               {reason_block}
               <p>You are welcome to re-apply after addressing the points above.</p>
@@ -163,14 +173,16 @@ class EmailService:
 
     @staticmethod
     def send_service_approval_email(host_name: str, email: str, service_title: str) -> bool:
+        safe_name = html.escape(host_name or "")
+        safe_title = html.escape(service_title or "")
         subject = f"Your Service '{service_title}' Has Been Approved!"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
               <h2 style="color:#C4622D;">Service Approved!</h2>
-              <p>Hi {host_name},</p>
-              <p>Your service "<strong>{service_title}</strong>" is now visible to travelers.</p>
+              <p>Hi {safe_name},</p>
+              <p>Your service "<strong>{safe_title}</strong>" is now visible to travelers.</p>
               <p style="margin-top:30px;color:#666;font-size:12px;">Best regards,<br>The AfriStay Team</p>
             </div>
           </body>
@@ -180,18 +192,21 @@ class EmailService:
 
     @staticmethod
     def send_host_onboarding_email(name: str, email: str, temp_password: str) -> bool:
+        safe_name = html.escape(name or "")
+        safe_email = html.escape(email or "")
+        safe_password = html.escape(temp_password or "")
         subject = "Welcome to AfriStay — Your Host Account is Ready"
         html_content = f"""
         <html>
           <body style="font-family:Arial,sans-serif;color:#333;background:#f9f9f9;padding:20px;">
             <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-              <h2 style="color:#C4622D;margin-top:0;">Welcome to AfriStay, {name}!</h2>
+              <h2 style="color:#C4622D;margin-top:0;">Welcome to AfriStay, {safe_name}!</h2>
               <p>Your host account has been created by the AfriStay team. You can start listing services immediately.</p>
               <p>Use the credentials below to log in:</p>
               <div style="background:#FAF6EF;border:1px solid #E8D9B8;border-radius:8px;padding:16px 20px;margin:24px 0;">
-                <p style="margin:0 0 8px;"><strong>Email:</strong> {email}</p>
+                <p style="margin:0 0 8px;"><strong>Email:</strong> {safe_email}</p>
                 <p style="margin:0;"><strong>Temporary Password:</strong>
-                  <span style="font-family:monospace;background:#fff;border:1px solid #ddd;padding:2px 8px;border-radius:4px;">{temp_password}</span>
+                  <span style="font-family:monospace;background:#fff;border:1px solid #ddd;padding:2px 8px;border-radius:4px;">{safe_password}</span>
                 </p>
               </div>
               <p style="color:#c53030;font-size:13px;">
@@ -215,10 +230,13 @@ class EmailService:
 
     @staticmethod
     def send_service_rejection_email(host_name: str, email: str, service_title: str, reason: str = "") -> bool:
+        safe_name = html.escape(host_name or "")
+        safe_title = html.escape(service_title or "")
+        safe_reason = html.escape(reason or "")
         subject = f"Update on Your Listing '{service_title}'"
         reason_block = f"""
             <div style="background:#fff5f5;border-left:4px solid #e53e3e;padding:12px 16px;margin:16px 0;border-radius:4px;">
-                <p style="margin:0;color:#c53030;font-size:14px;"><strong>Reason:</strong> {reason}</p>
+                <p style="margin:0;color:#c53030;font-size:14px;"><strong>Reason:</strong> {safe_reason}</p>
             </div>
         """ if reason else ""
         html_content = f"""
@@ -226,8 +244,8 @@ class EmailService:
           <body style="font-family:Arial,sans-serif;color:#333;">
             <div style="max-width:600px;margin:0 auto;">
               <h2 style="color:#C4622D;">Service Listing Not Approved</h2>
-              <p>Hi {host_name},</p>
-              <p>Your listing "<strong>{service_title}</strong>" could not be approved at this time.</p>
+              <p>Hi {safe_name},</p>
+              <p>Your listing "<strong>{safe_title}</strong>" could not be approved at this time.</p>
               {reason_block}
               <p>You can update and resubmit from your host dashboard.</p>
               <p style="margin-top:30px;color:#666;font-size:12px;">Best regards,<br>The AfriStay Team</p>

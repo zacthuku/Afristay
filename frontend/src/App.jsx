@@ -24,6 +24,10 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import AdminUsers from "./pages/AdminUsers";
 import AdminApprovals from "./pages/AdminApprovals";
+import AdminCountries from "./pages/AdminCountries";
+import AdminCategories from "./pages/AdminCategories";
+import AdminDestinations from "./pages/AdminDestinations";
+import AdminServiceTypes from "./pages/AdminServiceTypes";
 import Host from "./pages/Host";
 import Dashboard from "./pages/Dashboard";
 import MyBookings from "./pages/MyBookings";
@@ -145,6 +149,38 @@ function AppRoutes() {
           element={
             <ProtectedRoute user={user} role="admin">
               <AdminCareers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/countries"
+          element={
+            <ProtectedRoute user={user} role="admin">
+              <AdminCountries />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/categories"
+          element={
+            <ProtectedRoute user={user} role="admin">
+              <AdminCategories />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/destinations"
+          element={
+            <ProtectedRoute user={user} role="admin">
+              <AdminDestinations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/service-types"
+          element={
+            <ProtectedRoute user={user} role="admin">
+              <AdminServiceTypes />
             </ProtectedRoute>
           }
         />

@@ -2,6 +2,7 @@ import { useState, useContext, useEffect, useCallback } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { authService, userService } from "../services/api";
+import { validateEmail } from "../utils/validate";
 
 
 // ✅ Icons
@@ -90,7 +91,8 @@ export default function Login() {
 
   const handleLogin = async () => {
     const newErrors = {};
-    if (!email.trim()) newErrors.email = true;
+    const emailErr = validateEmail(email);
+    if (emailErr) newErrors.email = emailErr;
     if (!password) newErrors.password = true;
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -188,7 +190,7 @@ export default function Login() {
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: false })); }}
               disabled={loading}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">Email is required.</p>}
+            {errors.email && <p className="text-red-500 text-xs mt-1">{typeof errors.email === "string" ? errors.email : "Email is required."}</p>}
           </div>
 
           {/* PASSWORD */}

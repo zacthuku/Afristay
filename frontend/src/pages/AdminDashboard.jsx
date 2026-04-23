@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { AppContext } from "../context/AppContext";
 import { adminService } from "../services/api";
+import { validateEmail } from "../utils/validate";
 
 // ─── helpers ────────────────────────────────────────────────────────
 function fmt(d) {
@@ -78,14 +79,19 @@ function CustomTooltip({ active, payload, label, prefix = "" }) {
 // ─── Onboard Host Modal ──────────────────────────────────────────────
 function OnboardHostModal({ onClose, onSuccess }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setFormErrors(e => ({ ...e, [k]: null })); };
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name || !form.email) {
-      toast.error("Name and email are required");
+    const errs = {};
+    if (!form.name.trim()) errs.name = "Full name is required.";
+    const emailErr = validateEmail(form.email);
+    if (emailErr) errs.email = emailErr;
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
       return;
     }
     setSaving(true);
@@ -130,8 +136,9 @@ function OnboardHostModal({ onClose, onSuccess }) {
                 onChange={e => set(key, e.target.value)}
                 placeholder={placeholder}
                 required={required}
-                className="w-full border border-[#E8D9B8] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#C4622D] transition-colors"
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#C4622D] transition-colors ${formErrors[key] ? "border-red-400 bg-red-50" : "border-[#E8D9B8]"}`}
               />
+              {formErrors[key] && <p className="text-red-500 text-xs mt-1">{formErrors[key]}</p>}
             </div>
           ))}
 
@@ -157,10 +164,14 @@ function OnboardHostModal({ onClose, onSuccess }) {
 
 // ─── Main ────────────────────────────────────────────────────────────
 const QUICK_LINKS = [
-  { label: "Manage Users",    icon: "👥", to: "/admin/users",     desc: "Block, delete, view all accounts" },
-  { label: "Approvals",       icon: "✅", to: "/admin/approvals", desc: "Review pending hosts & services" },
-  { label: "Manage Careers",  icon: "💼", to: "/admin/careers",   desc: "Post, edit, and remove job openings" },
-  { label: "Browse Listings", icon: "🏠", to: "/search",          desc: "See all approved listings live" },
+  { label: "Manage Users",    icon: "👥", to: "/admin/users",         desc: "Block, delete, view all accounts" },
+  { label: "Approvals",       icon: "✅", to: "/admin/approvals",     desc: "Review pending hosts & services" },
+  { label: "Manage Careers",  icon: "💼", to: "/admin/careers",       desc: "Post, edit, and remove job openings" },
+  { label: "Browse Listings", icon: "🏠", to: "/search",              desc: "See all approved listings live" },
+  { label: "Countries",       icon: "🌍", to: "/admin/countries",     desc: "Manage countries, currencies & payments" },
+  { label: "Categories",      icon: "🏷️",  to: "/admin/categories",    desc: "Manage experience & adventure categories" },
+  { label: "Destinations",    icon: "📍", to: "/admin/destinations",  desc: "Manage featured home-page destinations" },
+  { label: "Service Types",   icon: "⚙️",  to: "/admin/service-types", desc: "Manage accommodation & transport types" },
 ];
 
 export default function AdminDashboard() {

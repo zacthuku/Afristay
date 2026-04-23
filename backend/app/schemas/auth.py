@@ -4,10 +4,25 @@ from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import re
 
 
+def _normalize_email(v: str) -> str:
+    v = v.strip().lower()
+    if len(v) > 254:
+        raise ValueError("Email address too long (max 254 characters)")
+    local = v.split("@")[0]
+    if len(local) > 64:
+        raise ValueError("Email local part too long (max 64 characters)")
+    return v
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     confirm_password: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return _normalize_email(v)
 
     @field_validator("password")
     def validate_password(cls, v):
@@ -38,6 +53,11 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return _normalize_email(v)
 
 
 class GoogleAuthRequest(BaseModel):
@@ -87,6 +107,11 @@ class ChangePasswordRequest(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
     origin: str = ""
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return _normalize_email(v)
 
 
 class ResetPasswordRequest(BaseModel):

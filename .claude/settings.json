@@ -9,7 +9,8 @@
       "Bash(node --input-type=module --eval \"import\\('./src/pages/TripPlanner.jsx'\\)\")",
       "Bash(python3 -m py_compile backend/app/api/routes/trips.py)",
       "Bash(npx vite *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(alembic heads *)"
     ]
   }
 }

@@ -60,7 +60,7 @@ class Service(Base):
 
     host_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
 
-    type: Mapped[str] = mapped_column(String, nullable=False)  # accommodation | transport
+    type: Mapped[str] = mapped_column(String, nullable=False)  # accommodation | transport | attraction | restaurant | experience | tour | adventure | wellness | event | cruise
 
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text)
@@ -72,12 +72,13 @@ class Service(Base):
 
     service_metadata: Mapped[dict] = mapped_column(JSONB)
     approval_status: Mapped[str] = mapped_column(String, default="pending")
+    country_code: Mapped[str] = mapped_column(String(2), nullable=True)  # FK to countries.code
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
-        CheckConstraint("type IN ('accommodation','transport')"),
-        CheckConstraint("pricing_type IN ('per_night','per_hour','fixed','per_km')"),
+        CheckConstraint("type IN ('accommodation','transport','attraction','restaurant','experience','tour','adventure','wellness','event','cruise')"),
+        CheckConstraint("pricing_type IN ('per_night','per_hour','fixed','per_km','per_person','per_day','per_entry')"),
         CheckConstraint("approval_status IN ('pending','approved','rejected')"),
     )
 
@@ -396,3 +397,89 @@ class ActivityBooking(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="activity_bookings")
+
+
+# =========================
+# COUNTRIES
+# =========================
+class Country(Base):
+    __tablename__ = "countries"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(2), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    flag: Mapped[str] = mapped_column(String(10), nullable=True)
+    currency_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    currency_symbol: Mapped[str] = mapped_column(String(10), nullable=False)
+    payment_methods: Mapped[dict] = mapped_column(JSONB, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# SERVICE CATEGORIES
+# =========================
+class ServiceCategory(Base):
+    __tablename__ = "service_categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    icon: Mapped[str] = mapped_column(String(10), nullable=True)
+    location_keyword: Mapped[str] = mapped_column(String(100), nullable=True)
+    display_bg: Mapped[str] = mapped_column(String(50), nullable=True)
+    display_border: Mapped[str] = mapped_column(String(50), nullable=True)
+    display_text: Mapped[str] = mapped_column(String(50), nullable=True)
+    category_type: Mapped[str] = mapped_column(String(20), default="experience")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    display_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# DESTINATIONS
+# =========================
+class Destination(Base):
+    __tablename__ = "destinations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    slug: Mapped[str] = mapped_column(String(50), nullable=True)
+    subtitle: Mapped[str] = mapped_column(String(100), nullable=True)
+    image_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    country_code: Mapped[str] = mapped_column(String(2), nullable=True)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=True)
+    display_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# SERVICE TYPES
+# =========================
+class ServiceType(Base):
+    __tablename__ = "service_types"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    label: Mapped[str] = mapped_column(String(100), nullable=False)
+    icon: Mapped[str] = mapped_column(String(10), nullable=True)
+    description: Mapped[str] = mapped_column(String(200), nullable=True)
+    pricing_types: Mapped[dict] = mapped_column(JSONB, nullable=True)
+    category: Mapped[str] = mapped_column(String(20), default="accommodation")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    display_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# REJECTION REASONS
+# =========================
+class RejectionReason(Base):
+    __tablename__ = "rejection_reasons"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    text: Mapped[str] = mapped_column(String(200), nullable=False)
+    applies_to: Mapped[str] = mapped_column(String(20), default="both")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
