@@ -2,8 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 
-# Convert async URL to sync URL
-sync_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+# Normalize URL: Render gives postgres://, SQLAlchemy 2.x needs postgresql://
+sync_url = settings.DATABASE_URL \
+    .replace("postgresql+asyncpg://", "postgresql://") \
+    .replace("postgres://", "postgresql://")
 
 # Sync engine for app runtime
 engine = create_engine(

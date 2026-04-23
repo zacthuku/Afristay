@@ -21,8 +21,12 @@ import geoalchemy2  # noqa: F401
 # Alembic Config object
 config = context.config
 
-# Strip async driver — Alembic needs a sync connection
-sync_url = settings.DATABASE_URL.replace("+asyncpg", "").replace("postgresql+asyncpg", "postgresql")
+# Strip async driver and normalize postgres:// → postgresql://
+sync_url = (
+    settings.DATABASE_URL
+    .replace("postgresql+asyncpg://", "postgresql://")
+    .replace("postgres://", "postgresql://")
+)
 config.set_main_option("sqlalchemy.url", sync_url)
 
 # Logging
