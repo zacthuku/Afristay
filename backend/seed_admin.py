@@ -16,7 +16,9 @@ from app.core.security import hash_password
 from app.core.config import settings
 
 # Convert async URL to sync for seeding
-db_url = str(settings.DATABASE_URL).replace("postgresql+asyncpg://", "postgresql://")
+db_url = (str(settings.DATABASE_URL)
+          .replace("postgresql+asyncpg://", "postgresql://")
+          .replace("postgres://", "postgresql://"))
 
 # Create engine and session
 engine = create_engine(db_url)

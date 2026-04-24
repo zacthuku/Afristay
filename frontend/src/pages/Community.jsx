@@ -10,7 +10,7 @@ const TOPICS = [
   {
     icon: "✈️",
     title: "Traveler Stories",
-    desc: "Memorable trips, hidden gems, and travel tips from AfriStay guests. Inspire and be inspired.",
+    desc: "Memorable trips, hidden gems, and travel tips from AfriStayHub guests. Inspire and be inspired.",
     posts: 318,
   },
   {
@@ -31,13 +31,13 @@ const HIGHLIGHTS = [
   {
     name: "Wanjiru M.",
     location: "Nairobi, Kenya",
-    quote: "AfriStay helped me turn my spare cottage into a full income. The host community gave me the confidence to start.",
+    quote: "AfriStayHub helped me turn my spare cottage into a full income. The host community gave me the confidence to start.",
     avatar: "W",
   },
   {
     name: "Chidi O.",
     location: "Lagos, Nigeria",
-    quote: "I've stayed at 12 AfriStay properties. Every one felt like a local experience, not a hotel. That's irreplaceable.",
+    quote: "I've stayed at 12 AfriStayHub properties. Every one felt like a local experience, not a hotel. That's irreplaceable.",
     avatar: "C",
   },
   {
@@ -54,7 +54,7 @@ export default function Community() {
       {/* Hero */}
       <div className="bg-[#3D2B1A] text-white py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
-          The AfriStay Community
+          The AfriStayHub Community
         </h1>
         <p className="text-white/60 max-w-xl mx-auto text-lg">
           A home for travelers and hosts who believe in the power of authentic African hospitality.
@@ -81,8 +81,8 @@ export default function Community() {
         </div>
         <p className="text-center text-sm text-gray-400 mt-8">
           Full forum launching soon — join the waitlist by emailing{" "}
-          <a href="mailto:community@afristay.co.ke" className="text-[#C4622D]">
-            community@afristay.co.ke
+          <a href="mailto:community@afristayhub.co.ke" className="text-[#C4622D]">
+            community@afristayhub.co.ke
           </a>
         </p>
       </section>
@@ -131,7 +131,7 @@ export default function Community() {
             to="/register"
             className="bg-[#C4622D] text-white px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition"
           >
-            Join AfriStay
+            Join AfriStayHub
           </Link>
           <Link
             to="/host"

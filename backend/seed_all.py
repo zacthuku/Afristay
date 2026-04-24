@@ -30,10 +30,30 @@ fake = Faker()
 Faker.seed(42)
 random.seed(42)
 
-db_url = str(settings.DATABASE_URL).replace("postgresql+asyncpg://", "postgresql://")
+db_url = (str(settings.DATABASE_URL)
+          .replace("postgresql+asyncpg://", "postgresql://")
+          .replace("postgres://", "postgresql://"))
 engine = create_engine(db_url, echo=False)
 Session = sessionmaker(bind=engine)
 db = Session()
+
+# ─── Reset: clear all tables before re-seeding ───────────────────────────────
+
+print("🗑  Clearing existing seed data…")
+with engine.connect() as conn:
+    conn.execute(text("""
+        TRUNCATE TABLE
+            reviews, payments, bookings, cart_items,
+            trip_segments, activity_bookings, trips,
+            availability, accommodations, transport,
+            services, users,
+            job_openings, rejection_reasons,
+            service_types, service_categories,
+            destinations, countries
+        RESTART IDENTITY CASCADE
+    """))
+    conn.commit()
+print("✅ Tables cleared\n")
 
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
@@ -196,18 +216,22 @@ print(f"✅ Rejection reasons: {len(REJECTION_REASONS)}")
 
 # ─── 6. Admin user ───────────────────────────────────────────────────────────
 
-admin = User(
-    email="admin@afristay.co.ke",
-    name="AfriStay Admin",
-    phone="+254700000000",
-    password_hash=hash_password("Afristay@1"),
-    role="admin",
-    is_verified=True,
-    host_application_status="approved",
-)
-db.add(admin)
-db.commit()
-print("✅ Admin: admin@afristay.co.ke / Afristay@1")
+admin = db.query(User).filter(User.email == "admin@afristay.co.ke").first()
+if not admin:
+    admin = User(
+        email="admin@afristay.co.ke",
+        name="AfriStay Admin",
+        phone="+254700000000",
+        password_hash=hash_password("Afristay@1"),
+        role="admin",
+        is_verified=True,
+        host_application_status="approved",
+    )
+    db.add(admin)
+    db.commit()
+    print("✅ Admin: admin@afristay.co.ke / Afristay@1")
+else:
+    print("✅ Admin already exists, skipping")
 
 
 # ─── 7. Host users ───────────────────────────────────────────────────────────

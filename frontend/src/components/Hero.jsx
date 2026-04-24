@@ -50,9 +50,12 @@ export default function Hero() {
         <p className="text-white/70 text-xs uppercase tracking-widest font-semibold mb-3">
           Africa's #1 Accommodation Marketplace
         </p>
-        <h1 className="text-white text-3xl md:text-5xl font-bold leading-tight mb-4">
+        <h1 className="text-white text-3xl md:text-5xl font-bold leading-tight mb-3">
           Discover authentic stays across Africa
         </h1>
+        <p className="text-white/80 text-sm md:text-base leading-relaxed mb-5 max-w-md">
+          From safari lodges in the Maasai Mara to beachfront villas in Zanzibar — book unique African experiences with local hosts, pay your way, and travel with confidence.
+        </p>
         <div className="flex flex-wrap gap-3 mb-6">
           <Link to="/search" className="bg-[#C4622D] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#a8521f] transition-colors">
             Explore stays

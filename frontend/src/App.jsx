@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import ListingDetail from "./pages/ListingDetail";
@@ -192,12 +193,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <AppRoutes />
-        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-      </BrowserRouter>
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <AppRoutes />
+          <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        </BrowserRouter>
+      </AppProvider>
+    </ThemeProvider>
   );
 }

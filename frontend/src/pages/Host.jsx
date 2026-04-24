@@ -489,7 +489,7 @@ function GuestLanding({ serviceTypes }) {
             Join 2,400+ hosts across Africa
           </div>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            Turn your space or service into income on AfriStay
+            Turn your space or service into income on AfriStayHub
           </h1>
           <p className="mt-4 text-white/80 text-lg">
             List your accommodation, transport, tours, or flights. Reach thousands of travellers
@@ -1232,7 +1232,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
               <h3 className="font-semibold text-[#3D2B1A]">Connect your booking system <span className="text-gray-400 font-normal text-sm">(optional)</span></h3>
               <p className="text-sm text-gray-500 mt-1">
                 If you already manage bookings through an external platform (e.g., Amadeus, Beds24,
-                your own website), enter the connection details below. AfriStay will sync your
+                your own website), enter the connection details below. AfriStayHub will sync your
                 availability automatically.
               </p>
             </div>
@@ -1262,7 +1262,7 @@ function HostDashboard({ user, services, loading, onSubmit, onEdit, editingServi
                   className="w-full rounded-2xl border border-gray-200 p-3 focus:outline-none focus:border-[#C4622D]"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  The API endpoint where AfriStay can query your real-time availability.
+                  The API endpoint where AfriStayHub can query your real-time availability.
                 </p>
               </div>
               <div>

@@ -122,13 +122,90 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How it works */}
+      <section className="py-14 px-4 md:px-10">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[#C4622D] font-semibold text-xs uppercase tracking-widest mb-1">Simple &amp; Fast</p>
+            <h2 className="text-2xl font-bold text-[#3D2B1A]">Book in three easy steps</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { step: "01", icon: "🔍", title: "Search your destination", desc: "Filter by city, dates, budget, and type. Find accommodation and transport in one place." },
+              { step: "02", icon: "📅", title: "Pick your dates &amp; book", desc: "Choose your check-in and check-out, review the listing details, and confirm your booking instantly." },
+              { step: "03", icon: "💸", title: "Pay with M-Pesa or card", desc: "Secure checkout via M-Pesa STK push or Flutterwave. Your booking is confirmed the moment payment goes through." },
+            ].map(({ step, icon, title, desc }) => (
+              <div key={step} className="relative bg-white rounded-2xl p-7 shadow-sm border border-[#EDE0D0]">
+                <span className="absolute top-5 right-6 text-4xl font-black text-[#EDE0D0] leading-none select-none">{step}</span>
+                <div className="text-3xl mb-4">{icon}</div>
+                <h3 className="font-bold text-[#3D2B1A] text-base mb-2" dangerouslySetInnerHTML={{ __html: title }} />
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why AfriStayHub — trust badges */}
+      <section className="py-12 bg-white">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <div className="text-center mb-8">
+            <p className="text-[#C4622D] font-semibold text-xs uppercase tracking-widest mb-1">Built for Africa</p>
+            <h2 className="text-2xl font-bold text-[#3D2B1A]">Why travellers choose AfriStayHub</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[
+              { icon: "🌍", title: "Africa-first", desc: "Every listing is curated for authenticity and local experience." },
+              { icon: "🔒", title: "Safe payments", desc: "M-Pesa, Airtel Money, and card — all encrypted and secure." },
+              { icon: "🤝", title: "Verified hosts", desc: "Hosts are reviewed and approved by our team before going live." },
+              { icon: "📞", title: "24/7 support", desc: "Our local support team is ready to help whenever you need." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="text-center p-5 rounded-2xl bg-[#FAF6EF] border border-[#EDE0D0]">
+                <div className="text-3xl mb-3">{icon}</div>
+                <h4 className="font-bold text-[#3D2B1A] text-sm mb-1">{title}</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Traveller testimonials */}
+      <section className="py-14 px-4 md:px-10">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-[#C4622D] font-semibold text-xs uppercase tracking-widest mb-1">Real stories</p>
+            <h2 className="text-2xl font-bold text-[#3D2B1A]">What our travellers say</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { name: "Amara O.", location: "Lagos → Nairobi", quote: "Found an incredible guesthouse in Westlands at half the hotel price. Paid with M-Pesa in seconds. Will never book any other way.", avatar: "🧑🏾" },
+              { name: "Zanele M.", location: "Johannesburg → Zanzibar", quote: "The beach villa was exactly as pictured. AfriStayHub's host verification gave me the confidence to book without hesitation.", avatar: "👩🏿" },
+              { name: "David K.", location: "Nairobi → Maasai Mara", quote: "Booked accommodation and transport in a single flow. The trip planner suggested routes I hadn't even thought of. Brilliant platform.", avatar: "👨🏾" },
+            ].map(({ name, location, quote, avatar }) => (
+              <div key={name} className="bg-white rounded-2xl p-6 border border-[#EDE0D0] shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">{avatar}</span>
+                  <div>
+                    <p className="font-bold text-[#3D2B1A] text-sm">{name}</p>
+                    <p className="text-xs text-gray-400">{location}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed italic">"{quote}"</p>
+                <div className="flex gap-0.5 mt-3 text-[#C4622D] text-sm">{'★★★★★'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Host CTA — slim banner */}
       <section className="py-10 px-4 md:px-10" style={{ background: "linear-gradient(135deg, #3D2B1A 0%, #6B3A1F 60%, #C4622D 100%)" }}>
         <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
           <div>
             <p className="text-white/60 text-xs uppercase tracking-widest font-semibold mb-1">For hosts</p>
             <h3 className="text-xl font-bold">Turn your space into income</h3>
-            <p className="text-white/70 text-sm mt-1">Join 1,200+ hosts earning with AfriStay — list in under 10 minutes.</p>
+            <p className="text-white/70 text-sm mt-1">Join 1,200+ hosts earning with AfriStayHub — list in under 10 minutes.</p>
           </div>
           <Link
             to="/host"

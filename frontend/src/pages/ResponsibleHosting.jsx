@@ -22,7 +22,7 @@ const PRINCIPLES = [
   {
     icon: "🚫",
     title: "Zero Discrimination",
-    desc: "AfriStay has a strict non-discrimination policy. All guests must be accepted without regard to race, religion, gender, nationality, or disability.",
+    desc: "AfriStayHub has a strict non-discrimination policy. All guests must be accepted without regard to race, religion, gender, nationality, or disability.",
   },
   {
     icon: "💳",
@@ -75,7 +75,7 @@ export default function ResponsibleHosting() {
       <section className="max-w-3xl mx-auto px-6 pb-16">
         <div className="bg-white border border-[#E8D9B8] rounded-2xl p-8">
           <h2 className="text-xl font-bold text-[#3D2B1A] mb-5">
-            AfriStay Hosting Standards
+            AfriStayHub Hosting Standards
           </h2>
           <p className="text-gray-600 text-sm mb-6">
             All hosts agree to meet these minimum standards when joining the platform.
@@ -100,7 +100,7 @@ export default function ResponsibleHosting() {
         <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
           <h3 className="font-semibold text-red-700 mb-2">Policy Violations</h3>
           <p className="text-red-600 text-sm leading-relaxed">
-            Hosts who violate AfriStay's responsible hosting policies may face
+            Hosts who violate AfriStayHub's responsible hosting policies may face
             listing suspension, financial penalties, or permanent removal from the
             platform. If you witness a policy violation as a guest, please report
             it via the Help Centre.

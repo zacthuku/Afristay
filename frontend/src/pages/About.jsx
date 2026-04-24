@@ -42,7 +42,7 @@ export default function About() {
       {/* Hero */}
       <div className="bg-[#3D2B1A] text-white py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
-          About Afri<span className="text-[#C4622D]">Stay</span>
+          About Afri<span className="text-[#C4622D]">Stay</span><span className="text-[#E8A000]">Hub</span>
         </h1>
         <p className="text-white/70 max-w-2xl mx-auto text-lg">
           We're on a mission to make Africa's most extraordinary stays
@@ -54,14 +54,14 @@ export default function About() {
       <section className="max-w-4xl mx-auto px-6 py-16">
         <h2 className="text-2xl font-bold text-[#3D2B1A] mb-4">Our Story</h2>
         <p className="text-gray-600 leading-relaxed mb-4">
-          AfriStay was founded in Nairobi in 2022 by a group of travelers and
+          AfriStayHub was founded in Nairobi in 2022 by a group of travelers and
           entrepreneurs who were frustrated that Africa's most breathtaking
           properties were invisible to the world. From cliffside lodges in
           Ethiopia to beachfront villas in Mozambique, these gems deserved a
           platform built specifically for the African context.
         </p>
         <p className="text-gray-600 leading-relaxed">
-          We built AfriStay to bridge that gap — combining M-Pesa payments,
+          We built AfriStayHub to bridge that gap — combining M-Pesa payments,
           local host support, and a deep respect for African hospitality into
           one seamless marketplace.
         </p>

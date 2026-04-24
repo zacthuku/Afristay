@@ -47,7 +47,7 @@ export default function TripPlanner() {
 
   // Restore trip state when returning from login
   useEffect(() => {
-    const raw = localStorage.getItem("afristay_pending_trip");
+    const raw = localStorage.getItem("afristayhub_pending_trip");
     if (!raw) return;
     try {
       const saved = JSON.parse(raw);
@@ -64,7 +64,7 @@ export default function TripPlanner() {
       setStep("results");
       pendingActionRef.current = saved.pendingAction || null;
     } catch {
-      localStorage.removeItem("afristay_pending_trip");
+      localStorage.removeItem("afristayhub_pending_trip");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -91,7 +91,7 @@ export default function TripPlanner() {
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { "Accept-Language": "en", "User-Agent": "AfriStay-TripPlanner/1.0" } }
+            { headers: { "Accept-Language": "en", "User-Agent": "AfriStayHub-TripPlanner/1.0" } }
           );
           const data = await res.json();
           const addr = data.address || {};
@@ -144,7 +144,7 @@ export default function TripPlanner() {
   }
 
   function saveTripToSession(pendingAction) {
-    localStorage.setItem("afristay_pending_trip", JSON.stringify({
+    localStorage.setItem("afristayhub_pending_trip", JSON.stringify({
       form, origin, trip, activities,
       selectedAccomId, selectedTransportId,
       accomDates, transportDate,
@@ -199,7 +199,7 @@ export default function TripPlanner() {
         }
       }
       toast.success("Trip saved to your account!");
-      localStorage.removeItem("afristay_pending_trip");
+      localStorage.removeItem("afristayhub_pending_trip");
     } catch (err) {
       toast.error(err.message || "Failed to save trip");
     } finally {
@@ -279,7 +279,7 @@ export default function TripPlanner() {
       if (added > 0) parts.push(`${added} service${added > 1 ? "s" : ""}`);
       if (actCount > 0) parts.push(`${actCount} activit${actCount > 1 ? "ies" : "y"}`);
       toast.success(`Trip saved${parts.length ? ` — ${parts.join(", ")} added` : ""}!`);
-      localStorage.removeItem("afristay_pending_trip");
+      localStorage.removeItem("afristayhub_pending_trip");
       navigate("/cart");
     } catch (err) {
       toast.error(err.message || "Failed to add to cart");

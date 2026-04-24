@@ -7,7 +7,7 @@ const CONTACTS = [
     label: "Address",
     value: "The Promenade, Westlands, Nairobi, Kenya",
   },
-  { icon: "✉️", label: "Email", value: "support@afristay.co.ke" },
+  { icon: "✉️", label: "Email", value: "support@afristayhub.co.ke" },
   { icon: "📞", label: "Phone", value: "+254 700 000 000" },
   { icon: "🕐", label: "Hours", value: "Mon–Fri, 8am – 6pm EAT" },
 ];

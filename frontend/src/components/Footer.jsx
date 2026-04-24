@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "../assets/afristay svg.svg";
+import logo from "../assets/afristayhub.svg";
 
 const EXPLORE = [
   { label: "City Stays",       to: "/search?category=city" },
@@ -33,9 +33,9 @@ export default function Footer() {
         {/* Brand */}
         <div className="min-w-[200px] flex-1 max-w-xs">
           <Link to="/" className="flex items-center gap-2 mb-4">
-            <img src={logo} alt="AfriStay" className="w-6 h-6 brightness-200" />
+            <img src={logo} alt="AfriStayHub" className="w-6 h-6 rounded brightness-200 logo-icon" />
             <span className="font-serif font-bold text-xl text-white">
-              Afri<span className="text-[#C4622D]">Stay</span>
+              Afri<span className="text-[#C4622D]">Stay</span><span className="text-[#E8A000]">Hub</span>
             </span>
           </Link>
           <p className="text-white/50 text-sm leading-relaxed">
@@ -117,7 +117,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-[1280px] mx-auto mt-8 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-white/30">
-        <span>© {new Date().getFullYear()} AfriStay Ltd. Nairobi, Kenya.</span>
+        <span>© {new Date().getFullYear()} AfriStayHub Ltd. Nairobi, Kenya.</span>
         <div className="flex gap-5">
           <Link to="/about"   className="hover:text-[#C4622D] transition-colors">Privacy</Link>
           <Link to="/about"   className="hover:text-[#C4622D] transition-colors">Terms</Link>

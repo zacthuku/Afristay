@@ -34,7 +34,7 @@ export default function Careers() {
 
       {/* Perks */}
       <section className="max-w-4xl mx-auto px-6 py-14">
-        <h2 className="text-2xl font-bold text-[#3D2B1A] mb-8 text-center">Why AfriStay?</h2>
+        <h2 className="text-2xl font-bold text-[#3D2B1A] mb-8 text-center">Why AfriStayHub?</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
           {PERKS.map((p) => (
             <div key={p.label} className="bg-white border border-[#E8D9B8] rounded-2xl p-5 flex items-center gap-3">
@@ -59,7 +59,7 @@ export default function Careers() {
             <p className="text-gray-400 mb-2">No open positions right now.</p>
             <p className="text-sm text-gray-400">
               Send your CV to{" "}
-              <a href="mailto:careers@afristay.co.ke" className="text-[#C4622D]">careers@afristay.co.ke</a>
+              <a href="mailto:careers@afristayhub.co.ke" className="text-[#C4622D]">careers@afristayhub.co.ke</a>
               {" "}and we'll reach out when something fits.
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function Careers() {
                       </div>
                     )}
                     <a
-                      href={`mailto:careers@afristay.co.ke?subject=Application: ${job.title}`}
+                      href={`mailto:careers@afristayhub.co.ke?subject=Application: ${job.title}`}
                       className="inline-block bg-[#C4622D] text-white px-6 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition"
                     >
                       Apply Now

@@ -222,7 +222,7 @@ export default function AdminDashboard() {
 
   function exportReport() {
     const rows = [
-      ["AfriStay Admin Report", new Date().toLocaleDateString()],
+      ["AfriStayHub Admin Report", new Date().toLocaleDateString()],
       [],
       ["=== PLATFORM SUMMARY ==="],
       ["Total Users", u.total ?? 0],
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
       ["Month", "Revenue (KES)", "Bookings", "New Users"],
       ...monthly.map(m => [m.month, m.revenue, m.bookings, m.new_users]),
     ];
-    downloadCSV(rows, `afristay-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCSV(rows, `afristayhub-report-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success("Report exported as CSV");
   }
 
@@ -249,7 +249,7 @@ export default function AdminDashboard() {
       ["Name", "Email", "Role", "Joined"],
       ...(stats?.recent_users || []).map(u => [u.name || "", u.email, u.role, fmt(u.created_at)]),
     ];
-    downloadCSV(rows, `afristay-users-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCSV(rows, `afristayhub-users-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success("Users exported");
   }
 
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
       ["Service", "Amount (KES)", "Status", "Date"],
       ...(stats?.recent_bookings || []).map(b => [b.service_title, b.total_price, b.status, fmt(b.created_at)]),
     ];
-    downloadCSV(rows, `afristay-bookings-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCSV(rows, `afristayhub-bookings-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success("Bookings exported");
   }
 

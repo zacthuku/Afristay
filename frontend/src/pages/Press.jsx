@@ -1,24 +1,24 @@
 const RELEASES = [
   {
     date: "March 2026",
-    title: "AfriStay Raises $2M Seed Round to Expand Across East Africa",
+    title: "AfriStayHub Raises $2M Seed Round to Expand Across East Africa",
     outlet: "TechCabal",
     excerpt:
-      "AfriStay, the Nairobi-based accommodation marketplace, has closed a $2M seed round led by pan-African investors to fuel expansion into Uganda, Tanzania, and Rwanda.",
+      "AfriStayHub, the Nairobi-based accommodation marketplace, has closed a $2M seed round led by pan-African investors to fuel expansion into Uganda, Tanzania, and Rwanda.",
   },
   {
     date: "January 2026",
-    title: "AfriStay Launches M-Pesa Instant Booking for Kenyan Travelers",
+    title: "AfriStayHub Launches M-Pesa Instant Booking for Kenyan Travelers",
     outlet: "Business Daily Africa",
     excerpt:
       "Travelers can now book and pay for stays instantly using M-Pesa, removing the friction of international card payments for local guests.",
   },
   {
     date: "October 2025",
-    title: "AfriStay Named Top African Travel Startup to Watch in 2026",
+    title: "AfriStayHub Named Top African Travel Startup to Watch in 2026",
     outlet: "Forbes Africa",
     excerpt:
-      "Forbes Africa highlighted AfriStay among its top 10 startups reshaping travel and hospitality across Sub-Saharan Africa.",
+      "Forbes Africa highlighted AfriStayHub among its top 10 startups reshaping travel and hospitality across Sub-Saharan Africa.",
   },
 ];
 
@@ -31,7 +31,7 @@ export default function Press() {
       <div className="bg-[#3D2B1A] text-white py-16 px-6 text-center">
         <h1 className="text-4xl font-serif font-bold mb-3">Press & Media</h1>
         <p className="text-white/60 max-w-xl mx-auto">
-          News, announcements, and media resources from AfriStay.
+          News, announcements, and media resources from AfriStayHub.
         </p>
       </div>
 
@@ -78,7 +78,7 @@ export default function Press() {
             </p>
           </div>
           <a
-            href="mailto:press@afristay.co.ke"
+            href="mailto:press@afristayhub.co.ke"
             className="flex-shrink-0 bg-[#C4622D] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition text-sm"
           >
             Request Media Kit

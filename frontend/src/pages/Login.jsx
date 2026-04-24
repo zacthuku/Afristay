@@ -145,7 +145,7 @@ export default function Login() {
         {/* LEFT TEXT */}
         <div className="text-white max-w-lg mb-10 md:mb-0">
           <h1 className="text-5xl font-serif font-bold mb-4">
-            Afri<span className="text-[#C4622D]">Stay</span>
+            Afri<span className="text-[#C4622D]">Stay</span><span className="text-[#E8A000]">Hub</span>
           </h1>
 
           <p className="text-lg leading-relaxed">

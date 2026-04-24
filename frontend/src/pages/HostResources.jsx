@@ -14,7 +14,7 @@ const GUIDES = [
   {
     icon: "🗓️",
     title: "Managing Availability",
-    desc: "Keep your calendar up to date to avoid double bookings and improve your search ranking on AfriStay.",
+    desc: "Keep your calendar up to date to avoid double bookings and improve your search ranking on AfriStayHub.",
   },
   {
     icon: "💬",
@@ -29,7 +29,7 @@ const GUIDES = [
   {
     icon: "🔒",
     title: "Safety & Security",
-    desc: "Best practices for vetting guests, protecting your property, and handling disputes through AfriStay's resolution centre.",
+    desc: "Best practices for vetting guests, protecting your property, and handling disputes through AfriStayHub's resolution centre.",
   },
 ];
 
@@ -43,8 +43,8 @@ const FAQS = [
     a: "Yes. You can set minimum and maximum night requirements from your host dashboard under listing settings.",
   },
   {
-    q: "What fees does AfriStay charge hosts?",
-    a: "AfriStay charges a 3% host service fee on each confirmed booking. Guests pay a separate guest service fee.",
+    q: "What fees does AfriStayHub charge hosts?",
+    a: "AfriStayHub charges a 3% host service fee on each confirmed booking. Guests pay a separate guest service fee.",
   },
   {
     q: "How does the review system work?",
@@ -59,7 +59,7 @@ export default function HostResources() {
       <div className="bg-[#3D2B1A] text-white py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Host Resources</h1>
         <p className="text-white/60 max-w-xl mx-auto text-lg">
-          Everything you need to run a successful listing on AfriStay.
+          Everything you need to run a successful listing on AfriStayHub.
         </p>
         <Link
           to="/host"

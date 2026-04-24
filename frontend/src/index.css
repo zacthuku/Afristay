@@ -1,2 +1,117 @@
 @import "tailwindcss";
 
+/* ── Tailwind v4 class-based dark mode ────────────────────────────────────── */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Dark mode global ─────────────────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Page / layout backgrounds */
+.dark [class~="bg-[#FAF6EF]"],
+.dark [class~="bg-cream"] {
+  background-color: #0F0A06 !important;
+}
+
+.dark [class~="bg-white"] {
+  background-color: #1E1208 !important;
+}
+
+/* Subtle surface tones */
+.dark [class~="bg-gray-50"],
+.dark [class~="bg-gray-100"],
+.dark [class~="bg-[#FAF6EF]/50"] {
+  background-color: #1a100a !important;
+}
+
+/* Gradient sections — darken to match dark base */
+.dark [style*="background: linear-gradient(135deg, #3D2B1A"] {
+  background: linear-gradient(135deg, #0a0603 0%, #1a0e07 60%, #3d1a0a 100%) !important;
+}
+
+/* Primary text */
+.dark [class~="text-[#3D2B1A]"] {
+  color: #F0E8DC !important;
+}
+
+/* Secondary / muted text */
+.dark [class~="text-[#5C4230]"] {
+  color: #C4A882 !important;
+}
+
+/* Gray text */
+.dark [class~="text-gray-500"],
+.dark [class~="text-gray-600"] {
+  color: #A89070 !important;
+}
+
+.dark [class~="text-gray-400"] {
+  color: #7A6045 !important;
+}
+
+.dark [class~="text-gray-300"] {
+  color: #6A5035 !important;
+}
+
+/* Borders */
+.dark [class~="border-[#EDE0D0]"] {
+  border-color: #2D1F10 !important;
+}
+
+.dark [class~="border-[#E8D9B8]"] {
+  border-color: #352515 !important;
+}
+
+.dark [class~="border-gray-200"],
+.dark [class~="border-gray-300"] {
+  border-color: #2D1F10 !important;
+}
+
+/* Input fields */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1E1208 !important;
+  color: #F0E8DC !important;
+  border-color: #3D2B1A !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #7A6045 !important;
+}
+
+/* Skeleton loaders */
+.dark [class~="bg-gray-100"][class~="animate-pulse"],
+.dark .animate-pulse {
+  background-color: #231608 !important;
+}
+
+/* Cards / surfaces with white bg inside dark context */
+.dark [class~="rounded-2xl"][class~="bg-white"],
+.dark [class~="rounded-xl"][class~="bg-white"] {
+  background-color: #1E1208 !important;
+}
+
+/* Navbar specifically — sticky so needs its own override */
+.dark nav[class~="bg-[#FAF6EF]"] {
+  background-color: #100800 !important;
+  border-color: #2D1F10 !important;
+}
+
+/* Dropdown panels */
+.dark [class~="bg-white"][class~="shadow"] {
+  background-color: #1E1208 !important;
+}
+
+/* Hover states on elements with light bg */
+.dark [class~="hover:bg-[#FAF6EF]"]:hover {
+  background-color: #2D1F10 !important;
+}
+
+/* Logo icon — black background in dark mode */
+.dark .logo-icon {
+  background-color: #000000;
+  padding: 2px;
+}

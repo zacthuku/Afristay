@@ -1,7 +1,8 @@
 import { useState, useContext, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import logo from "../assets/afristay svg.svg";
+import { useTheme } from "../context/ThemeContext";
+import logo from "../assets/afristayhub.svg";
 
 // ─── Static nav menu definitions ────────────────────────────────────────────
 const ADVENTURES_ITEMS = [
@@ -112,6 +113,7 @@ export default function Navbar() {
     availableCountries,
     selectedCountry, setSelectedCountry,
   } = useContext(AppContext);
+  const { dark, toggle } = useTheme();
 
   const savedScrollY = useRef(0);
   const [isOpen, setIsOpen]               = useState(false);
@@ -179,9 +181,9 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <img src={logo} alt="AfriStay Logo" className="w-6 h-6" />
+          <img src={logo} alt="AfriStayHub Logo" className="w-6 h-6 rounded logo-icon" />
           <span className="font-serif font-bold text-[20px] text-[#3D2B1A]">
-            Afri<span className="text-[#C4622D]">Stay</span>
+            Afri<span className="text-[#C4622D]">Stay</span><span className="text-[#E8A000]">Hub</span>
           </span>
         </Link>
 
@@ -311,6 +313,15 @@ export default function Navbar() {
             )}
           </div>
         </div>
+
+        {/* Dark mode toggle — desktop */}
+        <button
+          onClick={toggle}
+          title={dark ? "Switch to light mode" : "Switch to dark mode"}
+          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border border-[#E8D9B8] hover:border-[#C4622D] transition-colors text-base"
+        >
+          {dark ? "☀️" : "🌙"}
+        </button>
 
         {/* Right side — cart + profile */}
         <div className="hidden md:flex items-center gap-2">
@@ -501,6 +512,15 @@ export default function Navbar() {
               )}
             </div>
           )}
+
+          {/* Dark mode toggle — mobile */}
+          <button
+            onClick={toggle}
+            className="flex items-center justify-between w-full py-3 border-b border-[#E8D9B8] text-[14px] font-medium text-[#5C4230]"
+          >
+            <span>{dark ? "Light Mode" : "Dark Mode"}</span>
+            <span className="text-base">{dark ? "☀️" : "🌙"}</span>
+          </button>
 
           {/* Cart link */}
           <Link to="/cart" onClick={navigateFromMenu}
