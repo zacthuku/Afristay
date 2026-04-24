@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { contactService } from "../services/api";
 
 const CONTACTS = [
   {
@@ -33,10 +34,15 @@ export default function Contact() {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    toast.success("Message sent! We'll get back to you within 24 hours.");
-    setForm({ name: "", email: "", subject: "", message: "" });
+    try {
+      await contactService.submit(form);
+      toast.success("Message sent! We'll get back to you within 24 hours.");
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fc = (k) =>

@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from app.api.routes import auth, users, services, bookings, payments, reviews, jobs, cart, trips
+from app.api.routes.contact import router as contact_router
 from app.api.routes.countries import router as countries_router
 from app.api.routes.config import router as config_router
 from app.api.routes.stats import router as stats_router
@@ -69,6 +70,7 @@ app.include_router(trips.router)
 app.include_router(countries_router, prefix="/api/v1")
 app.include_router(config_router, prefix="/api/v1")
 app.include_router(stats_router, prefix="/api/v1")
+app.include_router(contact_router)
 
 
 @app.get("/")

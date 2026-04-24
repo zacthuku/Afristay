@@ -254,3 +254,32 @@ class EmailService:
         </html>
         """
         return EmailService.send_email(email, subject, html_content)
+
+    @staticmethod
+    def send_contact_message(sender_name: str, sender_email: str, subject: str, message: str) -> bool:
+        safe_name    = html.escape(sender_name or "")
+        safe_email   = html.escape(sender_email or "")
+        safe_subject = html.escape(subject or "")
+        safe_message = html.escape(message or "").replace("\n", "<br>")
+        email_subject = f"[AfriStayHub Contact] {safe_subject}"
+        html_content = f"""
+        <html>
+          <body style="font-family:Arial,sans-serif;color:#333;background:#f9f9f9;padding:20px;">
+            <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+              <h2 style="color:#C4622D;margin-top:0;">New Contact Message</h2>
+              <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+                <tr><td style="padding:8px 0;font-weight:bold;width:80px;">From:</td><td>{safe_name}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;">Email:</td><td><a href="mailto:{safe_email}" style="color:#C4622D;">{safe_email}</a></td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;">Subject:</td><td>{safe_subject}</td></tr>
+              </table>
+              <div style="background:#FAF6EF;border:1px solid #E8D9B8;border-radius:8px;padding:20px;">
+                <p style="margin:0;line-height:1.7;">{safe_message}</p>
+              </div>
+              <p style="margin-top:24px;color:#999;font-size:12px;">
+                Sent via AfriStayHub contact form · Reply directly to {safe_email}
+              </p>
+            </div>
+          </body>
+        </html>
+        """
+        return EmailService.send_email(settings.SUPPORT_EMAIL, email_subject, html_content)

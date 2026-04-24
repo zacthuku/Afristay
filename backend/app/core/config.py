@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_FROM_NAME: str = "AfriStay"
+    SUPPORT_EMAIL: str = "zacthuku7@gmail.com"
     FRONTEND_URL: str = "http://localhost:5173"
 
     # Pydantic v2 config

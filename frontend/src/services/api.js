@@ -382,3 +382,7 @@ export const configService = {
 export const statsService = {
   getPlatformStats: () => apiCall("/api/v1/stats"),
 };
+
+export const contactService = {
+  submit: (form) => apiCall("/api/v1/contact", { method: "POST", body: JSON.stringify(form) }),
+};
